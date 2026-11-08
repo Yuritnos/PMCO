@@ -730,7 +730,8 @@ details.more[open] > summary { margin-bottom: 14px; }
 .lcover .selmark { position: static; }
 .ltitle strong { font-weight: 600; }
 .lnum { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
-@media (max-width: 640px) { .ltable .lperf, .ltable th:nth-child(4) { display: none; } }
+/* Selected list columns remain available through horizontal scrolling on narrow screens. */
+.grid:has(.ltable) {display:block;overflow-x:auto;}
 .filters { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
 .filters[hidden] { display: none; }
 .shelf-filter-group { flex: 1 1 180px; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 7px; }
@@ -1175,6 +1176,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 .work-position { font:12px var(--font-mono); color:var(--muted); margin-right:10px; }
 .work-head.with-position { grid-template-columns:64px minmax(0,1fr) 76px 38px; }
 @media(max-width:480px) { .work-head.with-position { grid-template-columns:48px minmax(0,1fr) 60px 32px; gap:4px; } .side-tab .segment-select { padding:8px 6px; } }
+.release-count-row {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.release-count-row>div{min-width:0}.quantity-control{display:flex;gap:4px}.quantity-control input{min-width:0;text-align:center}.quantity-control button{padding:6px 10px}.settings-info{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px}.settings-help{position:fixed;z-index:1000;max-width:min(380px,calc(100vw - 16px));padding:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:4px;box-shadow:0 6px 24px #0003;font-size:14px;line-height:1.6}.settings-heading{display:flex;align-items:center;gap:4px}#profile-form [data-i18n="pfHandleHint"]{white-space:nowrap;font-size:12px;letter-spacing:0;overflow-x:auto}.list-value{max-width:300px;overflow-wrap:anywhere}#import-box{margin-top:12px}#backup-box{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
 </style>
 </head>
 <body>
@@ -1371,8 +1373,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         <div class="field" id="medium-name-field" hidden><label class="lbl" for="mediumName" data-i18n="mediumName">Medium name</label><input class="input" id="mediumName" maxlength="80" autocomplete="off"></div>
       </div>
       <fieldset id="set-fields">
+        <div class="release-count-row"><div>
         <legend id="set-choice-label" data-i18n="discSet">Standalone or set</legend>
         <div class="field"><select class="input" id="set-choice" aria-labelledby="set-choice-label"></select></div>
+        </div><div class="field"><label class="lbl" for="collection-quantity" data-i18n="collectionQuantity">Collection quantity</label><div class="quantity-control"><button type="button" class="btn quiet" id="quantity-minus" data-i18n-aria="quantityLess">−</button><input class="input" id="collection-quantity" type="number" min="1" max="9999" step="1" value="1"><button type="button" class="btn quiet" id="quantity-plus" data-i18n-aria="quantityMore">+</button></div><p class="err" id="quantity-error" role="alert"></p></div></div>
         <div id="set-editor" hidden>
           <div class="field"><label class="lbl" for="set-total" data-i18n="setTotal">Discs in set</label><input class="input" id="set-total" type="number" min="1" max="999" value="2"></div>
         </div>
@@ -1429,11 +1433,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           <div class="two">
             <div class="field">
               <label class="lbl" for="label" data-i18n="label">Label</label>
-              <input class="input" id="label" name="label" type="text" autocomplete="off" data-i18n-ph="labelPh" placeholder="e.g. Deutsche Grammophon">
+              <input class="input" list="suggest-label" id="label" name="label" type="text" autocomplete="off" data-i18n-ph="labelPh" placeholder="e.g. Deutsche Grammophon">
             </div>
             <div class="field">
               <label class="lbl" for="issuer" data-i18n="issuer">Issuing corporation</label>
-              <input class="input" id="issuer" name="issuer" type="text" autocomplete="off" data-i18n-ph="issuerPh" placeholder="e.g. Universal Music Group">
+              <input class="input" list="suggest-issuer" id="issuer" name="issuer" type="text" autocomplete="off" data-i18n-ph="issuerPh" placeholder="e.g. Universal Music Group">
             </div>
           </div>
           <div class="two">
@@ -1455,11 +1459,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           <div class="two">
             <div class="field">
               <label class="lbl" for="manufacturer" data-i18n="manufacturer">Manufactured by</label>
-              <input class="input" id="manufacturer" type="text" autocomplete="off" data-i18n-ph="manufacturerPh" placeholder="e.g. Polydor K.K.">
+              <input class="input" list="suggest-manufacturer" id="manufacturer" type="text" autocomplete="off" data-i18n-ph="manufacturerPh" placeholder="e.g. Polydor K.K.">
             </div>
             <div class="field">
               <label class="lbl" for="madeIn" data-i18n="madeIn">Country of manufacture</label>
-              <input class="input" id="madeIn" type="text" autocomplete="off" data-i18n-ph="madeInPh" placeholder="e.g. Japan">
+              <input class="input" list="suggest-madeIn" id="madeIn" type="text" autocomplete="off" data-i18n-ph="madeInPh" placeholder="e.g. Japan">
             </div>
           </div>
           <div class="field">
@@ -1549,6 +1553,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         <button class="btn" id="submit" type="submit">Add to collection</button>
         <button class="btn quiet" id="cancel-edit" type="button" hidden data-i18n="cancel">Cancel</button>
       </div>
+    <datalist id="suggest-label"></datalist>
+    <datalist id="suggest-issuer"></datalist>
+    <datalist id="suggest-manufacturer"></datalist>
+    <datalist id="suggest-madeIn"></datalist>
     </form>
   </section>
 </div>
@@ -1596,26 +1604,27 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         <input type="range" id="card-size" min="140" max="320" step="1" value="210">
         <span aria-hidden="true" data-i18n="sizeLarger">Larger</span>
       </div>
-      <span class="hint" data-i18n="cardDetails">Show on cards by default</span>
+      <span class="hint" data-i18n="cardDetails">Show on cards by default</span> <button class="settings-info" type="button" data-help="cardDefaultHint" data-i18n-aria="info" aria-label="More information">ⓘ</button>
       <div id="card-fields"></div>
-      <p class="hint" data-i18n="cardDefaultHint">New CDs use this. Each CD can choose its own when you edit it.</p>
+
     </div>
 
+    <div class="sect"><h3 class="settings-heading"><span data-i18n="listDetails">Show in list view by default</span><button class="settings-info" type="button" data-i18n-aria="info" aria-label="More information" data-help="listHint">ⓘ</button></h3><div id="list-fields"></div></div>
     <div class="sect" id="audio-location-sect" hidden>
-      <h3 data-i18n="audioLocation">Audio storage folder</h3>
+      <h3 class="settings-heading"><span data-i18n="audioLocation">Audio storage folder</span> <button class="settings-info" type="button" data-help="audioLocationHint" data-i18n-aria="info" aria-label="More information">ⓘ</button></h3>
       <p class="hint" id="audio-location-path" style="overflow-wrap:anywhere"></p>
-      <p class="hint" data-i18n="audioLocationHint">Choose a folder on this computer. PMCO creates a PMCO Audio subfolder, copies and verifies your existing audio, then uses it for imports and CD extraction. Previous copies stay in the old folder. This setting is not synced.</p>
+
       <button type="button" class="btn small quiet" id="audio-location-choose" data-i18n="audioLocationChoose">Choose folder…</button>
       <p class="hint" id="audio-location-status" role="status"></p>
     </div>
     <div class="sect" id="data-sect">
-      <h3 data-i18n="dataSection">Your data</h3>
+      <h3 class="settings-heading"><span data-i18n="dataSection">Your data</span> <button class="settings-info" type="button" data-help="exportNote" data-i18n-aria="info" aria-label="More information">ⓘ</button></h3>
       <div class="btnrow">
         <button type="button" class="btn small quiet" id="export-json" data-i18n="exportJson">Export everything (JSON)</button>
         <button type="button" class="btn small quiet" id="export-csv" data-i18n="exportCsv">Export list (CSV)</button>
       </div>
-      <p class="hint" data-i18n="exportNote">JSON includes cover images and favorites. CSV is a plain list for spreadsheets.</p>
-      <div class="restore" id="import-box" hidden>
+
+      <div id="import-box" hidden>
         <div class="btnrow">
           <button type="button" class="btn small quiet" id="import-btn" data-i18n="importBtn">Import a PMCO file (JSON)…</button>
         </div>
@@ -1630,7 +1639,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         </div>
       </div>
       <div class="restore" id="backup-box" hidden>
-        <label class="hint" for="backup-list" data-i18n="backupsHead">Go back to a backup</label>
+        <label class="hint" for="backup-list" data-i18n="backupsHead">Go back to a backup</label> <button class="settings-info" type="button" data-help="backupNote" data-i18n-aria="info" aria-label="More information">ⓘ</button>
         <div class="btnrow">
           <select class="input" id="backup-list"></select>
           <button type="button" class="btn small quiet" id="backup-restore" data-i18n="backupRestore">Restore…</button>
@@ -1642,7 +1651,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
             <button type="button" class="btn small quiet" id="backup-no" data-i18n="keep">Keep</button>
           </div>
         </div>
-        <p class="hint" data-i18n="backupNote">PMCO keeps a copy of your collection from each of the last 14 days you changed it, on this computer.</p>
+
       </div>
     </div>
 
@@ -2886,6 +2895,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     "statsAlbumLabel.other": "专辑"
   });
 
+  Object.assign(I18N.en, {"collectionQuantity":"Collection quantity","quantityLess":"Decrease quantity","quantityMore":"Increase quantity","quantityError":"Enter a whole quantity from 1 to 9999.","listDetails":"Show in list view by default","listHint":"List columns use these defaults independently of cards. Title and cover always stay visible.","info":"More information","quantityValue":"{n} copies"});
+  Object.assign(I18N.ja, {"collectionQuantity":"所蔵数","quantityLess":"所蔵数を減らす","quantityMore":"所蔵数を増やす","quantityError":"1〜9999の整数を入力してください。","listDetails":"リスト表示の既定項目","listHint":"カードとは独立したリスト列の設定です。タイトルとカバーは常に表示されます。","info":"詳しい情報","quantityValue":"{n}点所蔵"});
+  Object.assign(I18N.zh, {"collectionQuantity":"收藏数量","quantityLess":"减少数量","quantityMore":"增加数量","quantityError":"请输入1至9999的整数。","listDetails":"列表上默认显示","listHint":"列表展示项与卡片设置相互独立。标题和封面始终显示。","info":"更多信息","quantityValue":"收藏{n}份"});
   var LANGS = {
     en: { tag: "en", name: "English" },
     ja: { tag: "ja", name: "日本語" },
@@ -2938,6 +2950,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function tnv(base, vars) { return t(base + (Number(vars.n) === 1 ? ".one" : ".other"), vars); }
 
 
+  function collectionQuantity(cd) { var n = Number(cd && cd.quantity); return Number.isInteger(n) && n > 0 ? n : 1; }
+  function shelfMediumText(cd) { var members = cd._members || [cd]; return members.length === 1 ? (mediumView() ? "" : mediumText(members[0])) : mediumSummary(members); }
+  function appendShelfBadges(host, cd) { var medium = shelfMediumText(cd); if (medium) host.appendChild(el("span", "chip medium-badge", medium));  }
   /* ---------- state ---------- */
   var cds = [];
   var loaded = false;
@@ -3148,6 +3163,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("open-add").hidden = currentAlbum === "music";
     $("fab-text").textContent = pl ? t("plAddMusic") : addReleaseText();
   }
+  function fillMetadataSuggestions() {
+    var defaults={label:["Deutsche Grammophon","Decca","Philips","EMI","Sony Classical","Warner Classics","Naxos","BIS","Chandos","Hyperion","ECM"],issuer:["Universal Music Group","Sony Music Entertainment","Warner Music Group"],manufacturer:["Sony DADC","Sonopress","Universal M & L","MPO","Optimal Media","Polydor K.K."],madeIn:["Japan","Germany","United Kingdom","United States","France","Netherlands","Austria","China"]};
+    Object.keys(defaults).forEach(function(f){var host=$("suggest-"+f);host.textContent="";Array.from(new Set(defaults[f].concat(cds.map(function(cd){return cd[f]||"";}).filter(Boolean)))).sort(cmpText).forEach(function(value){var option=el("option");option.value=value;host.appendChild(option);});});
+  }
   function fillComposers() {
     var dl = $("composers");
     dl.textContent = "";
@@ -3183,6 +3202,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     }
     translateSetForm();
     fillComposers();
+    fillMetadataSuggestions();
     refreshRows();
     if (lookupDiscRelease) qsa("#lookup-disc option").forEach(function (o) {
       o.textContent = t("setPosition", { n: o.value, total: lookupDiscRelease.lookupDiscs.length });
@@ -3228,6 +3248,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (ov.hidden || ov.classList.contains("is-closing")) return;
     if (id === "recovery" && !force) return;
     if (id === "settings" && audioLocationBusy) return;
+    if (id === "settings") closeSettingsHelp();
     if (id === "cd" && CdDrive && CdDrive.busy) { CdDrive.cancel(true, force); return; }
     if (id === "cd" && ((discSession && discSession.saving) || (formAudio && formAudio.saving))) return;
     if (id === "cd" && !force && cdFormDirty()) { openWin("cd-unsaved"); return; }
@@ -4353,7 +4374,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function shelfCount(list) {
     var items = mediumView() ? list.filter(function (c) { return mediumMatches(c, mediumView()); }) : list;
-    return t(mediumView() && mediumView() !== "other" ? "mediumCount" : "releaseItems", { albums: tn("albumTally", albumCountFor(list)), items: mediumView() && mediumView() !== "other" ? items.length : tn("itemTally", items.length), medium: t("medium." + mediumView()) });
+    return t(mediumView() && mediumView() !== "other" ? "mediumCount" : "releaseItems", { albums: tn("albumTally", albumCountFor(list)), items: mediumView() && mediumView() !== "other" ? items.reduce(function(n,c){return n+collectionQuantity(c);},0) : tn("itemTally", items.reduce(function(n,c){return n+collectionQuantity(c);},0)), medium: t("medium." + mediumView()) });
   }
   function shelfGroups(list) {
     var groups = {}, out = [];
@@ -5615,7 +5636,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     }
     var body = el("div", "card-body");
     body.appendChild(el("h3", null, cd.title));
-    body.appendChild(el("span", "chip medium-badge", mediumSummary(cd._members || [cd])));
+    appendShelfBadges(body, cd);
     var picked = {};
     fieldsFor(cd).forEach(function (f) { picked[f] = true; });
     var shownComposer = picked.composer ? cd.composer || "" : "";
@@ -5903,6 +5924,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     currentAlbum = "all";
     if (!$("win-detail").hidden) closeWin("detail");
     if (!$("win-stats").hidden) closeWin("stats");
+    fillMetadataSuggestions();
     renderAlbums();
     renderGrid();
     $("f-" + kind).focus({ preventScroll: true });
@@ -5945,7 +5967,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       return d;
     }
     tile(albumCountFor(cds), tn("statsAlbumLabel", albumCountFor(cds)));
-    tile(cds.length, tn("physicalTally", cds.length));
+    var physicalCount=cds.reduce(function(n,c){return n+collectionQuantity(c);},0);
+    tile(physicalCount, tn("physicalTally", physicalCount));
     tile(works, tn("workTally", works));
     var mins = Math.max(1, Math.round(secs / 60));
     tile(!secs ? "—" : mins >= 60 ? t("statsHours", { h: Math.floor(mins / 60), m: mins % 60 }) : t("statsMins", { m: mins }), t("statsTime")).classList.add("time");
@@ -5991,7 +6014,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       groups.appendChild(g);
     }
     group(t("statsComposers"), top(count(cdComposers), 8), "composer");
-    group(t("statsMedia"), SHELF_MEDIA.map(function (m) { return [m, cds.filter(function (cd) { return mediumMatches(cd, m); }).length]; }), "medium", mediumCategoryText);
+    group(t("statsMedia"), SHELF_MEDIA.map(function (m) { return [m, cds.filter(function (cd) { return mediumMatches(cd, m); }).reduce(function(n,c){return n+collectionQuantity(c);},0)]; }), "medium", mediumCategoryText);
     group(t("statsLabels"), top(count(function (cd) { return [cd.label]; }), 8));
     var dec = count(function (cd) { return [cdDecade(cd)]; });
     group(t("statsDecades"), Object.keys(dec).sort().map(function (k) { return [k, dec[k]]; }), null,
@@ -6156,13 +6179,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     tr.appendChild(c0);
     var c1 = el("td", "ltitle");
     c1.appendChild(el("strong", null, cd.title));
-    c1.appendChild(el("span", "chip set-badge medium-badge", mediumSummary(cd._members || [cd])));
+    appendShelfBadges(c1, cd);
     tr.appendChild(c1);
-    tr.appendChild(el("td", null, discComposer(cd)));
-    tr.appendChild(el("td", "lperf", groupedPerformers(cd.performers).slice(0, 2).map(function (p) { return p.name; }).join(", ")));
-    tr.appendChild(el("td", null, cd.label || ""));
-    tr.appendChild(el("td", "lnum", String(cd.releaseYear || cd.year || cd.recordingYear || "")));
-    tr.appendChild(el("td", "lnum", cd.catalogNo || ""));
+    listFields().forEach(function(f) {
+      var value = f === "composer" ? discComposer(cd) : f === "performers" ? groupedPerformers(cd.performers).slice(0,2).map(function(p){return p.name;}).join(", ") : f === "works" ? (cd.works||[]).map(function(w){return w.title;}).join("; ") : f === "totalTime" ? (totalSeconds(cd)?fmtSeconds(totalSeconds(cd)):"") : f === "type" ? workTypeText(cd.type||"") : f === "releaseYear" ? cd.releaseYear||cd.year||"" : f === "hub" ? hubText(cd.hub) : cd[f]||"";
+      tr.appendChild(el("td", f === "performers" ? "lperf" : "list-value", String(value)));
+    });
     return tr;
   }
   function isCurrentCd(id) {
@@ -6172,7 +6194,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function listTable(list, music, arranging) {
     var table = el("table", "ltable");
     var head = el("tr");
-    ["", "lTitle", "composer", "performers", "label", "fYear", "lCatalog"].forEach(function (k) {
+    ["", "lTitle"].concat(listFields().map(function(f){return (CARD_FIELDS.find(function(p){return p[0]===f;})||[f,f])[1];})).forEach(function (k) {
       var th = el("th", null, k ? t(k) : "");
       if (!k) th.appendChild(el("span", "sr-only", t("coverColumn")));
       th.scope = "col";
@@ -6622,7 +6644,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("acct-note").hidden = signedIn;
     $("set-storage").textContent = !backend ? "" : signedIn ? t("acctStorageCloud") :
       t(backend.kind === "db" ? "acctStorageDb" : backend.kind === "desktop" ? "acctStorageDesktop" : "acctStorageLocal");
-    $("set-stats").textContent = loaded ? tn("itemTally", cds.length) + " · " + tn("favoriteTally", meta.albums.length) : "";
+    $("set-stats").textContent = loaded ? tn("itemTally", cds.reduce(function(n,c){return n+collectionQuantity(c);},0)) + " · " + tn("favoriteTally", meta.albums.length) : "";
     renderCloud();
     if (document.activeElement !== $("card-size")) $("card-size").value = cardWidth();
     renderCardFields();
@@ -7120,7 +7142,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   /* Settings: the default for discs that have not chosen their own. */
   var settingsFields = { open: false };
+  var listSettingsFields = {open:false};
+  function listFields() { return Array.isArray(meta.settings.listFields) ? capFields(meta.settings.listFields).filter(function(f){return f !== FAV_TAGS_OFF;}) : ["composer","performers","label","releaseYear","catalogNo"]; }
   function renderCardFields() {
+    fieldPicker($("list-fields"), "lf", listFields().concat([FAV_TAGS_OFF]), listSettingsFields, function(next){ commitMeta(function(m){m.settings.listFields=next.filter(function(f){return f !== FAV_TAGS_OFF;});}); });
+    var favoriteOption=$("lf-albums"); if(favoriteOption) favoriteOption.closest("label").hidden=true;
     fieldPicker($("card-fields"), "cf", cardFields(), settingsFields, function (next) {
       commitMeta(function (m) { m.settings.cardFields = next; });
     });
@@ -7216,6 +7242,14 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     finally { audioLocationBusy = false; button.disabled = false; }
   });
 
+  var settingsHelp = null;
+  function closeSettingsHelp(){if(settingsHelp){settingsHelp.button.setAttribute("aria-expanded","false");settingsHelp.button.removeAttribute("aria-describedby");settingsHelp.popup.remove();settingsHelp=null;}}
+  qsa(".settings-info").forEach(function(button){
+    button.setAttribute("aria-expanded","false");
+    function show(){if(settingsHelp&&settingsHelp.button===button)return;closeSettingsHelp();var popup=el("div","settings-help",t(button.dataset.help));popup.id="settings-help";popup.setAttribute("role","tooltip");document.body.appendChild(popup);button.setAttribute("aria-describedby",popup.id);button.setAttribute("aria-expanded","true");settingsHelp={button:button,popup:popup};var r=button.getBoundingClientRect();popup.style.left=Math.max(8,Math.min(innerWidth-popup.offsetWidth-8,r.right-popup.offsetWidth))+"px";popup.style.top=(r.bottom+8+popup.offsetHeight<innerHeight?r.bottom+8:Math.max(8,r.top-popup.offsetHeight-8))+"px";}
+    button.addEventListener("mouseenter",show);button.addEventListener("focus",show);button.addEventListener("click",show);button.addEventListener("mouseleave",function(){if(document.activeElement!==button)closeSettingsHelp();});button.addEventListener("blur",closeSettingsHelp);button.addEventListener("keydown",function(e){if(e.key==="Escape"){e.preventDefault();e.stopPropagation();closeSettingsHelp();}});
+  });
+  $("win-settings").addEventListener("scroll",closeSettingsHelp,true);
   /* ---------- settings window ---------- */
   $("open-settings").addEventListener("click", function () {
     closeAccount();
@@ -7335,12 +7369,13 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       }, null, 2);
       name = "pmco-collection.json";
     } else {
-      var head = ["cdTitle", "composer", "works", "performers", "label", "issuer", "recYear", "relYear"]
+      var head = ["cdTitle", "collectionQuantity", "composer", "works", "performers", "label", "issuer", "recYear", "relYear"]
         .concat(DETAIL_FIELDS.map(function (f) { return f === "recordingVenue" ? "venue" : f; }), ["notes", "albumsField"])
         .map(function (k) { return csvCell(t(k === "type" ? "cdType" : k)); }).join(",");
       var rows = sortList(cds, "all").map(function (c) {
         return [
           c.title,
+          collectionQuantity(c),
           discComposer(c),
           (c.works || []).map(function (w) { return w.title; }).filter(Boolean).join("; "),
           (c.performers || []).map(function (p) { return roleText(p.role) + ": " + p.name; }).join("; "),
@@ -7899,6 +7934,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("set-total").value = set ? setTotal(setMembers(set.id)) : 2;
     $("set-err").textContent = ""; $("set-editor").hidden = !set;
   }
+  ["minus","plus"].forEach(function(direction){$("quantity-"+direction).addEventListener("click",function() {var input=$("collection-quantity");input.value=Math.max(1,Math.min(9999,(Number(input.value)||1)+(direction==="plus"?1:-1)));input.dispatchEvent(new Event("input",{bubbles:true}));});});
   $("set-choice").addEventListener("change", function () {
     if (discEditorBusy()) return;
     ensureDiscSession(); captureDiscEntry();
@@ -7974,7 +8010,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function cdFormSnapshot() {
     captureDiscEntry();
-    return JSON.stringify({ set: [$("set-choice").value, formSetId, $("title").value, $("set-total").value],
+    return JSON.stringify({ quantity: $("collection-quantity").value, set: [$("set-choice").value, formSetId, $("title").value, $("set-total").value],
       discs: discSession ? discSession.entries.map(function (e) {
         return [e.id, e.number, e.include, e.fingerprint !== e.initialFingerprint ? e.fingerprint : null];
       }) : singleDiscSnapshot() });
@@ -8008,6 +8044,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     showPhoto();
   }
   function clearForm() {
+    $("collection-quantity").value = "1"; $("quantity-error").textContent="";
     $("form-save-error").hidden = true;
     if (CdDrive) CdDrive.reset();
     finishPerformerDrag(false);
@@ -8057,6 +8094,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function startEdit(cd) {
     clearForm();
+    $("collection-quantity").value = collectionQuantity(cd);
     loadDiscEditor(cd, false, true);
     initDiscSession(cd, true);
     renderGrid(); applyMode(); rememberCdForm(); openWin("cd");
@@ -8497,9 +8535,13 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       if (d.country) out.madeIn = d.country;
       (d.companies || []).forEach(function (c) {
         var type = c.entity_type_name || "";
+        if (!out.issuer && /^(record company|distributed by|marketed by|licensed to)$/i.test(type)) out.issuer = dgClean(c.name);
         if (!out.manufacturer && /^(manufactured by|pressed by|made by)/i.test(type)) out.manufacturer = dgClean(c.name);
         if (!out.recordingVenue && /^recorded at/i.test(type)) out.recordingVenue = dgClean(c.name);
       });
+      var recording = String(d.notes || "").replace(/<[^>]+>/g," ").match(/\brecorded\b[^\n;]*/gi) || [];
+      var recordingYears = Array.from(new Set(recording.map(function(line){return line.split(/[℗©]|\bcopyright\b|\breleased\b/i)[0];}).join(" ").match(/\b(?:19|20)\d{2}\b/g) || [])).sort();
+      if (recordingYears.length) out.recordingYear = recordingYears.join(" / ");
       (d.identifiers || []).forEach(function (i) {
         var type = i.type || "", v = String(i.value || "").trim();
         if (!v) return;
@@ -10317,6 +10359,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var facts = el("dl", "facts");
     function fact(label, value) { if (value) { facts.appendChild(el("dt", null, label)); facts.appendChild(el("dd", null, String(value))); } }
     fact(t("medium"), itemLabel(cd));
+    fact(t("collectionQuantity"), collectionQuantity(cd));
     fact(t("composer"), cd.composer); fact(t("cdType"), cd.type ? workTypeText(cd.type) : "");
     groupedPerformers(cd.performers).forEach(function (p) { fact(p.roles.map(roleText).join(" / "), p.name); });
     [["label",cd.label],["issuer",cd.issuer],["recYear",cd.recordingYear],["relYear",cd.releaseYear||cd.year],
@@ -10380,6 +10423,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var main = el("div", "profile-main"), heading = el("h2", null, source.set.title); heading.id = "detail-h"; main.appendChild(heading);
     var total = setTotal(members);
     main.appendChild(el("p", "hint medium-badge", mediumSummary(members)));
+    main.appendChild(el("p", "hint", t("collectionQuantity")+": "+collectionQuantity(source)));
     main.appendChild(el("p", "hint", t("albumProgress", { n: members.length, total: total })));
     var missing = []; for (var n = 1; n <= total; n++) if (!members.some(function (c) { return +c.set.disc === n; })) missing.push(n);
     if (missing.length) main.appendChild(el("p", "hint", t("missingDiscs", { discs: missing.join(", ") })));
@@ -10499,6 +10543,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     h.id = "detail-h";
     main.appendChild(h);
     main.appendChild(el("span", "chip medium-badge", mediumText(cd)));
+    main.appendChild(el("p", "hint", t("collectionQuantity")+": "+collectionQuantity(cd)));
     if (releaseSet(cd)) main.appendChild(setButton("albumOpen", "disc-album-open", function () { openDetail(cd.id); }, true));
     /* Composer, performer and label names show every CD with that name when clicked. */
     var comps = cd.composer ? [cd.composer] : [];
@@ -10737,6 +10782,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   $("cd-form").addEventListener("submit", async function (e) {
     e.preventDefault();
+    var quantity=Number($("collection-quantity").value);
+    if (!Number.isInteger(quantity)||quantity<1||quantity>9999) {$("quantity-error").textContent=t("quantityError");$("collection-quantity").focus();return;}
+    $("quantity-error").textContent="";
     finishPerformerDrag(false);
     if ($("submit").disabled || discEditorBusy()) return;
     ensureDiscSession(); captureDiscEntry();
@@ -10756,6 +10804,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     candidates.forEach(function (c) { c.changes.forEach(function (cd) { secondary[cd.id] = cd; }); primary[c.cd.id] = c.cd; });
     var merged = Object.assign({}, secondary, primary), changes = Object.keys(merged).map(function (id) { return merged[id]; });
     var removed = discSession.entries.filter(function (entry) { return entry.existing && entry.remove; }).map(function (entry) { return cdById(entry.id); }).filter(Boolean).map(clone);
+    if(formSetId) setMembers(formSetId).forEach(function(cd){if(collectionQuantity(cd)!==quantity&&!changes.some(function(c){return c.id===cd.id;})&&!discSession.entries.some(function(e){return e.id===cd.id&&e.remove;}))changes.push(clone(cd));});
+    changes.forEach(function(cd){if(quantity!==1||Object.prototype.hasOwnProperty.call(cd,"quantity"))cd.quantity=quantity;});
     var removedIds = removed.map(function (cd) { return cd.id; }), beforeMeta = clone(meta);
     if (formSetId) {
       var byId = {};

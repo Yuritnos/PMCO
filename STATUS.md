@@ -1,6 +1,13 @@
 # PMCO current status
 
-Updated: 2026-11-05 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
+Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
+
+## Improvements 3.2 — implemented; Windows build pending (2026-11-08)
+
+- Added common/free-text suggestions for label, issuing company, manufacturer and country, including values already present in the collection. Discogs issuing-company credits were not mapped: Record Company/Distributed By/Marketed By/Licensed To are now recognized. Recording year has no dedicated field in the existing response handling; explicit Recorded notes now supply recording years, while release/copyright years alone do not. Sparse source data remains blank for review.
+- Settings help moved into hover/focus/click information icons for card defaults, audio location, data and backup restore. Import stays with exports in Data. User ID explanation is one scrollable line. List view now has independent default fields in Settings, keeping existing defaults and two-person summaries.
+- Added release-wide collection quantity (default 1), stepper/direct input, validation, dirty guard, set-wide propagation and profile/CSV/JSON persistence. Physical-item totals honor quantity; unique releases and playback entries are not duplicated. Untouched legacy records do not gain quantity fields. Single-item badges show only the medium in All media and disappear within a specific medium view; multi-item releases retain the full medium summary.
+- 93 browser checks passed: improvements-32 (4), collection integration (38), media editor (20), unsaved forms (8), rendering (6), lookup normalization (17). Settings screenshots reviewed at 420/1280 px in en/ja/zh; evidence under %TEMP%/pmco-32-qa/. No owner collection/account/drive used. Unrelated website/spreadsheet/video work is excluded from this change. Version remains 0.3.0. Build and verified installer replacement are authorized; no release/tag or hosted changes requested.
 
 ## Current milestone: clean startup and PMCO.exe — build 47
 
