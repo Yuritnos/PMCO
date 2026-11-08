@@ -92,6 +92,7 @@ async function main(){
  await test('Discogs company and explicit recording dates fill; copyright/release years never substitute',async()=>{const f=await fixture(),{page,state}=f;try{
  state.lookup={id:1,title:'Fixture',year:2000,companies:[{entity_type_name:'Record Company',name:'Fixture Issuer'}],notes:'Recorded in London, May 1985 and June 1987. ℗ 1999',tracklist:[]};
  var got=await page.evaluate(()=>mediaQA.discogsSource.details({id:1},''));assert.equal(got.issuer,'Fixture Issuer');assert.equal(got.recordingYear,'1985 / 1987');assert.equal(got.releaseYear,'2000');
+ state.lookup.notes='Recorded in 1985. Remastered in 1999.';got=await page.evaluate(()=>mediaQA.discogsSource.details({id:1},''));assert.equal(got.recordingYear,'1985');
  state.lookup.notes='℗ 1999; released 2000';got=await page.evaluate(()=>mediaQA.discogsSource.details({id:1},''));assert.equal(got.recordingYear,undefined);
  }finally{await f.close();}});
 }

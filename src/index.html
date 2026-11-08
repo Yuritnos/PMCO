@@ -8077,6 +8077,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     rememberCdForm();
   }
   function openAdd() {
+    fillMetadataSuggestions();
     if (!editingId && !discSession) $("medium").value = defaultMediumForView();
     $("drive-section").hidden = !IS_TAURI || $("medium").value !== "cd";
     if (!editingId) {
@@ -8093,6 +8094,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     openWin("cd");
   }
   function startEdit(cd) {
+    fillMetadataSuggestions();
     clearForm();
     $("collection-quantity").value = collectionQuantity(cd);
     loadDiscEditor(cd, false, true);
@@ -8539,7 +8541,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         if (!out.manufacturer && /^(manufactured by|pressed by|made by)/i.test(type)) out.manufacturer = dgClean(c.name);
         if (!out.recordingVenue && /^recorded at/i.test(type)) out.recordingVenue = dgClean(c.name);
       });
-      var recording = String(d.notes || "").replace(/<[^>]+>/g," ").match(/\brecorded\b[^\n;]*/gi) || [];
+      var recording = String(d.notes || "").replace(/<[^>]+>/g," ").match(/\brecorded\b[^.\n;]*/gi) || [];
       var recordingYears = Array.from(new Set(recording.map(function(line){return line.split(/[℗©]|\bcopyright\b|\breleased\b/i)[0];}).join(" ").match(/\b(?:19|20)\d{2}\b/g) || [])).sort();
       if (recordingYears.length) out.recordingYear = recordingYears.join(" / ");
       (d.identifiers || []).forEach(function (i) {
