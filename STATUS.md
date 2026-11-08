@@ -2,7 +2,14 @@
 
 Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: manufacturer suggestion correction — build 52 delivered (2026-11-08)
+## Current milestone: full-width manufacturer alias correction (2026-11-08)
+
+- Follow-up diagnosis confirmed the installed and running app is build 52. Two visually similar manufacturer entries use full-width **＆ (U+FF06)**, while previous matching and fixtures used ASCII **& (U+0026)**. Build 52 therefore still displayed three entries. The earlier completion claim missed this Unicode distinction.
+- Known manufacturer aliases now match after **NFKC** compatibility normalization, collapsing the typo, spacing and full-width variants into **Universal M&L**. Normalization is limited to recognition of this known alias; saved metadata, editor values and unrelated custom manufacturer names remain untouched.
+- Focused suggestion regression passed using an isolated collection with ASCII/full-width ampersands, full-width letters, an unrelated full-width custom name, and an edit/save round trip preserving original text. Production collection inspection was read-only and limited to manufacturer spellings/code points; no owner collection/account/drive was used in tests.
+- Corrected Windows build/download pending. Website publishing remains explicitly deferred by the owner; no new installation, version change, tag/release or hosted changes.
+
+## Previous milestone: manufacturer suggestion correction — build 52 delivered (2026-11-08)
 
 - Corrected **Univeral M&L** and the spaced **Universal M & L** suggestion aliases to retain only **Universal M&L**. Saved metadata and untouched editor values remain unchanged. The focused suggestion regression passed with both exact aliases and legacy-value persistence.
 - **Build 52 delivered**, [Actions run 42460824859](https://github.com/Yuritnos/PMCO/actions/runs/42460824859), exact app source **de59ee98b07d85eee3fa459380aaed52c06a1378**. **25 native CI tests passed**. Version remains 0.3.0; no release/tag or installed-app change.

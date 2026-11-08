@@ -3175,7 +3175,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       // Normalize suggestions only; retain the original values in saved records and inputs.
       defaults[field].concat(cds.map(function (cd) { return cd[field] || ""; })).forEach(function (value) {
         value = String(value).trim().replace(/\s+/g, " ");
-        if (field === "manufacturer" && /^univer(?:s)?al\s*m\s*&\s*l(?:,\s*germany)?$/i.test(value)) value = "Universal M&L";
+        // IME full-width characters match known aliases; saved and custom names remain untouched.
+        if (field === "manufacturer" && /^univer(?:s)?al\s*m\s*&\s*l(?:,\s*germany)?$/i.test(value.normalize("NFKC"))) value = "Universal M&L";
         if (field === "madeIn") {
           if (/^(?:US|USA|U\.S\.|U\.S\.A\.)$/i.test(value)) value = "United States";
           if (/^(?:Europe|Austria|Korea|Netherlands)$/i.test(value)) return;
