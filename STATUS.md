@@ -2,11 +2,14 @@
 
 Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: manufacturer suggestion correction and website update (2026-11-08)
+## Current milestone: manufacturer suggestion correction — build 52 delivered (2026-11-08)
 
-- Corrected the remaining misspelled **Univeral M&L** alias. It and **Universal M & L** now yield only **Universal M&L** in suggestions. Existing saved metadata stays unchanged.
-- Focused suggestion regression passed with the exact typo and spaced variants, including persistence of legacy values. Windows build/download, verified local replacement and Cloudflare Pages download update are pending. Keep version 0.3.0.
-- Website is the existing **pmco** Cloudflare Pages Direct Upload project at **https://pmco.pages.dev/**; preserve existing locale/support/privacy pages and verification files. Unrelated video/spreadsheet/design work remains excluded.
+- Corrected **Univeral M&L** and the spaced **Universal M & L** suggestion aliases to retain only **Universal M&L**. Saved metadata and untouched editor values remain unchanged. The focused suggestion regression passed with both exact aliases and legacy-value persistence.
+- **Build 52 delivered**, [Actions run 42460824859](https://github.com/Yuritnos/PMCO/actions/runs/42460824859), exact app source **de59ee98b07d85eee3fa459380aaed52c06a1378**. **25 native CI tests passed**. Version remains 0.3.0; no release/tag or installed-app change.
+- Downloaded artifact **13608639752**, ZIP **8,541,664 bytes**, SHA-256 **e17f89f9ef11efbfc9242b0b636e9635d56c77685560e7ac8a4fb394a1f94965**, matching GitHub's digest. Both packages pass integrity/extraction, x64 PMCO.exe 0.3.0, unchanged MSI upgrade identity, nine matching FLAC resources and normalized executable equivalence.
+- Replaced **installers/nsis/PMCO_0.3.0_x64-setup.exe** (**3,980,604 bytes**, SHA-256 **425DECC6D467FED12D4F5F15B09E5056073D44D774D85A3307D5CD841DDD59D6**) and **installers/msi/PMCO_0.3.0_x64_en-US.msi** (**4,780,032 bytes**, SHA-256 **28FDAFDB2D110345A437AD8C70CE3858100790D62335783982BDBD9520D13F64**). Final bytes match staging; both installer files have explicit Medium integrity labels. Verified build-51 packages and exact source are preserved in **installers/rollback-before-manufacturer-20261108/**.
+- Evidence: **installers/staging-manufacturer-42460824859/{artifact,verification,replacement,integrity-labels}.json** and build.log. No owner collection/account/drive was used.
+- **Website publication explicitly deferred by the owner** because their network prevents Cloudflare sign-in. The existing **pmco** Cloudflare Pages site at **https://pmco.pages.dev/** remains on build 47; release data/public downloads were not changed. Next publication should update the verified build-52 download paths, sizes, hashes and static fallbacks, regenerate locale/support/privacy pages with ownership files intact, then deploy and verify public bytes. Website tooling dependency linkedom 0.18.12 was restored locally for that follow-up; unrelated website design/video/spreadsheet work remains excluded.
 
 ## Previous milestone: display corrections and non-admin installer launch (2026-11-08)
 
