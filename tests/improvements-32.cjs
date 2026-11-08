@@ -107,10 +107,11 @@ async function main(){
  const dir=path.join(os.tmpdir(),'pmco-display-qa');fs.mkdirSync(dir,{recursive:true});await page.screenshot({path:path.join(dir,'settings-'+lang+'-'+width+'.png')});
  }
  }finally{await f.close();}});
- await test('statistics time follows Works on the same desktop row and remains readable on narrow screens',async()=>{const f=await fixture({extra:[{id:'long',title:'Long fixture',works:[{title:'Long work',duration:'2295:00',tracks:[]}]}]}),{page}=f;try{
+ await test('statistics time follows Works on the same desktop row and remains readable on narrow screens',async()=>{const f=await fixture({extra:[{id:'long',title:'Long fixture',works:[{title:'Long work',duration:'38:15:00',tracks:[]}]}]}),{page}=f;try{
  await page.locator('#open-stats').click();
  for(const lang of ['en','ja','zh'])for(const width of [420,768,1280]){
  await page.evaluate(l=>mediaQA.setLang(l,false),lang);await page.setViewportSize({width,height:900});
+ if(lang==='en')assert.equal(await page.locator('.stat-tile.time b').textContent(),'38 h 18 min');
  const boxes=await page.locator('.stat-tile').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,overflow:n.scrollWidth>n.clientWidth};}));
  assert.equal(boxes.length,4);assert(boxes.every(b=>!b.overflow),JSON.stringify(boxes));
  if(width>600){assert(boxes.every(b=>Math.abs(b.y-boxes[0].y)<1),JSON.stringify(boxes));assert(boxes[3].x>boxes[2].x);}
