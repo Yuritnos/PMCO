@@ -2,7 +2,13 @@
 
 Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: display corrections and non-admin installer launch (2026-11-08)
+## Current milestone: manufacturer suggestion correction and website update (2026-11-08)
+
+- Corrected the remaining misspelled **Univeral M&L** alias. It and **Universal M & L** now yield only **Universal M&L** in suggestions. Existing saved metadata stays unchanged.
+- Focused suggestion regression passed with the exact typo and spaced variants, including persistence of legacy values. Windows build/download, verified local replacement and Cloudflare Pages download update are pending. Keep version 0.3.0.
+- Website is the existing **pmco** Cloudflare Pages Direct Upload project at **https://pmco.pages.dev/**; preserve existing locale/support/privacy pages and verification files. Unrelated video/spreadsheet/design work remains excluded.
+
+## Previous milestone: display corrections and non-admin installer launch (2026-11-08)
 
 - Fixed card-default/backup information icons to stay beside their captions. Statistics keeps Total playing time immediately after Works in a four-tile desktop row, with paired rows on narrow screens. Restored normal User ID hint wrapping and joined the monthly notice into the same paragraph. Removed duplicate quantity +/− controls; native number arrows, validation and persistence remain.
 - Suggestion lists now use Universal M&L and RCA Red Seal once, merge US into United States, put West Germany/Japan first and omit Europe/Austria/Korea/Netherlands. Normalization affects options only; saved metadata and untouched editor values remain unchanged.

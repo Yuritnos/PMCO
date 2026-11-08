@@ -134,11 +134,13 @@ async function main(){
  {id:'alias2',title:'Alias 2',manufacturer:'Universal M & L',madeIn:'Europe',label:'RCA red seal'},
  {id:'alias3',title:'Alias 3',manufacturer:'Universal M & L, Germany',madeIn:'Austria'},
  {id:'alias4',title:'Alias 4',manufacturer:'Universal M&L',madeIn:'Korea'},
- {id:'alias5',title:'Alias 5',madeIn:'Netherlands'}
+ {id:'alias5',title:'Alias 5',madeIn:'Netherlands'},
+ {id:'alias6',title:'Alias typo',manufacturer:'Univeral M&L'},
+ {id:'alias7',title:'Alias spacing',manufacturer:'Universal M & L'}
  ];const f=await fixture({extra}),{page,state}=f;try{
  const before=structuredClone(state.doc);await page.evaluate(cd=>mediaQA.startEdit(cd),extra[2]);await page.locator('#more-details').evaluate(n=>n.open=true);
  const options=async field=>page.locator('#suggest-'+field+' option').evaluateAll(nodes=>nodes.map(n=>n.value));
- assert.deepEqual((await options('manufacturer')).filter(n=>/^Universal/i.test(n)),['Universal M&L']);
+ assert.deepEqual((await options('manufacturer')).filter(n=>/^Univer/i.test(n)),['Universal M&L']);
  assert.deepEqual((await options('label')).filter(n=>/^RCA/i.test(n)),['RCA Red Seal']);
  const countries=await options('madeIn');assert.deepEqual(countries.slice(0,2),['West Germany','Japan']);assert(countries.includes('United States'));assert(!countries.some(n=>['US','Europe','Austria','Korea','Netherlands'].includes(n)));
  assert.equal(await page.locator('#manufacturer').inputValue(),'Universal M & L, Germany');assert.equal(await page.locator('#madeIn').inputValue(),'Austria');assert.deepEqual(state.doc,before);
