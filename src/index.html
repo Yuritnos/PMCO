@@ -632,11 +632,11 @@ details.more[open] > summary { margin-bottom: 14px; }
 .setbtn:hover { border-color: var(--accent); color: var(--accent); }
 /* Statistics window: headline numbers, then ranked bars (one series, in the accent colour) */
 .panel.stats-panel { width: min(720px, 100%); }
-.stat-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(110px, 100%), 1fr)); gap: 10px; margin-bottom: 22px; }
+.stat-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 22px; }
 .stat-tile { padding: 12px 14px; background: var(--field); border: 1px solid var(--line); border-radius: 4px; }
 .stat-tile b { display: block; font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.1; white-space: nowrap; }
 .stat-tile.time b { font-size: 21px; }
-.stat-tile.time { grid-column: 1 / -1; }
+@media (max-width: 600px) { .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .storage-notice { padding: 12px 20px; background: var(--surface); color: var(--danger); border-bottom: 1px solid var(--danger); display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
 .cd-save-actions { position: sticky; bottom: -24px; z-index: 4; background: var(--surface); padding: 12px 0; border-top: 1px solid var(--line); }
 .stat-tile span { font-size: 12.5px; color: var(--muted); }
@@ -1176,7 +1176,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 .work-position { font:12px var(--font-mono); color:var(--muted); margin-right:10px; }
 .work-head.with-position { grid-template-columns:64px minmax(0,1fr) 76px 38px; }
 @media(max-width:480px) { .work-head.with-position { grid-template-columns:48px minmax(0,1fr) 60px 32px; gap:4px; } .side-tab .segment-select { padding:8px 6px; } }
-.release-count-row {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.release-count-row>div{min-width:0}.quantity-control{display:flex;gap:4px}.quantity-control input{min-width:0;text-align:center}.quantity-control button{padding:6px 10px}.settings-info{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px}.settings-help{position:fixed;z-index:1000;max-width:min(380px,calc(100vw - 16px));padding:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:4px;box-shadow:0 6px 24px #0003;font-size:14px;line-height:1.6}.settings-heading{display:flex;align-items:center;gap:4px}#profile-form [data-i18n="pfHandleHint"]{white-space:nowrap;font-size:12px;letter-spacing:0;overflow-x:auto}.list-value{max-width:300px;overflow-wrap:anywhere}#import-box{margin-top:12px}#backup-box{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
+.release-count-row {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.release-count-row>div{min-width:0}.quantity-control input{min-width:0;text-align:center}.settings-info{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px}.settings-help{position:fixed;z-index:1000;max-width:min(380px,calc(100vw - 16px));padding:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:4px;box-shadow:0 6px 24px #0003;font-size:14px;line-height:1.6}.settings-heading{display:flex;align-items:center;gap:4px}.settings-heading .settings-info{flex:none;width:auto}.settings-heading .hint{margin:0}.settings-caption{margin-bottom:8px}.list-value{max-width:300px;overflow-wrap:anywhere}#import-box{margin-top:12px}#backup-box{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
 </style>
 </head>
 <body>
@@ -1376,7 +1376,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         <div class="release-count-row"><div>
         <legend id="set-choice-label" data-i18n="discSet">Standalone or set</legend>
         <div class="field"><select class="input" id="set-choice" aria-labelledby="set-choice-label"></select></div>
-        </div><div class="field"><label class="lbl" for="collection-quantity" data-i18n="collectionQuantity">Collection quantity</label><div class="quantity-control"><button type="button" class="btn quiet" id="quantity-minus" data-i18n-aria="quantityLess">−</button><input class="input" id="collection-quantity" type="number" min="1" max="9999" step="1" value="1"><button type="button" class="btn quiet" id="quantity-plus" data-i18n-aria="quantityMore">+</button></div><p class="err" id="quantity-error" role="alert"></p></div></div>
+        </div><div class="field"><label class="lbl" for="collection-quantity" data-i18n="collectionQuantity">Collection quantity</label><div class="quantity-control"><input class="input" id="collection-quantity" type="number" min="1" max="9999" step="1" value="1"></div><p class="err" id="quantity-error" role="alert"></p></div></div>
         <div id="set-editor" hidden>
           <div class="field"><label class="lbl" for="set-total" data-i18n="setTotal">Discs in set</label><input class="input" id="set-total" type="number" min="1" max="999" value="2"></div>
         </div>
@@ -1604,7 +1604,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         <input type="range" id="card-size" min="140" max="320" step="1" value="210">
         <span aria-hidden="true" data-i18n="sizeLarger">Larger</span>
       </div>
-      <span class="hint" data-i18n="cardDetails">Show on cards by default</span> <button class="settings-info" type="button" data-help="cardDefaultHint" data-i18n-aria="info" aria-label="More information">ⓘ</button>
+      <div class="settings-heading settings-caption"><span class="hint" data-i18n="cardDetails">Show on cards by default</span> <button class="settings-info" type="button" data-help="cardDefaultHint" data-i18n-aria="info" aria-label="More information">ⓘ</button></div>
       <div id="card-fields"></div>
 
     </div>
@@ -1639,7 +1639,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         </div>
       </div>
       <div class="restore" id="backup-box" hidden>
-        <label class="hint" for="backup-list" data-i18n="backupsHead">Go back to a backup</label> <button class="settings-info" type="button" data-help="backupNote" data-i18n-aria="info" aria-label="More information">ⓘ</button>
+        <div class="settings-heading settings-caption"><label class="hint" for="backup-list" data-i18n="backupsHead">Go back to a backup</label> <button class="settings-info" type="button" data-help="backupNote" data-i18n-aria="info" aria-label="More information">ⓘ</button></div>
         <div class="btnrow">
           <select class="input" id="backup-list"></select>
           <button type="button" class="btn small quiet" id="backup-restore" data-i18n="backupRestore">Restore…</button>
@@ -1759,8 +1759,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       <div class="field">
         <label class="lbl" for="pf-handle" data-i18n="pfHandle">User ID</label>
         <input class="input" id="pf-handle" type="text" maxlength="20" autocomplete="off" spellcheck="false" data-i18n-ph="pfHandlePh" placeholder="e.g. user_id">
-        <p class="hint" data-i18n="pfHandleHint">Your unique code: 6 to 20 letters, numbers or underscores. Each ID can belong to only one account.</p>
-        <p class="hint" id="pf-handle-policy" aria-live="polite"></p>
+        <p class="hint"><span id="pf-handle-hint" data-i18n="pfHandleHint">Your unique code: 6 to 20 letters, numbers or underscores. Each ID can belong to only one account.</span> <span id="pf-handle-policy" aria-live="polite"></span></p>
         <p class="err" id="pf-handle-err" role="alert"></p>
       </div>
       <p class="hint" id="pf-email"></p>
@@ -3164,8 +3163,36 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("fab-text").textContent = pl ? t("plAddMusic") : addReleaseText();
   }
   function fillMetadataSuggestions() {
-    var defaults={label:["Deutsche Grammophon","Decca","Philips","EMI","Sony Classical","Warner Classics","Naxos","BIS","Chandos","Hyperion","ECM"],issuer:["Universal Music Group","Sony Music Entertainment","Warner Music Group"],manufacturer:["Sony DADC","Sonopress","Universal M & L","MPO","Optimal Media","Polydor K.K."],madeIn:["Japan","Germany","United Kingdom","United States","France","Netherlands","Austria","China"]};
-    Object.keys(defaults).forEach(function(f){var host=$("suggest-"+f);host.textContent="";Array.from(new Set(defaults[f].concat(cds.map(function(cd){return cd[f]||"";}).filter(Boolean)))).sort(cmpText).forEach(function(value){var option=el("option");option.value=value;host.appendChild(option);});});
+    var defaults = {
+      label: ["Deutsche Grammophon", "Decca", "Philips", "EMI", "Sony Classical", "Warner Classics", "Naxos", "BIS", "Chandos", "Hyperion", "ECM", "RCA Red Seal"],
+      issuer: ["Universal Music Group", "Sony Music Entertainment", "Warner Music Group"],
+      manufacturer: ["Sony DADC", "Sonopress", "Universal M&L", "MPO", "Optimal Media", "Polydor K.K."],
+      madeIn: ["West Germany", "Japan", "Germany", "United Kingdom", "United States", "France", "China"]
+    };
+    Object.keys(defaults).forEach(function (field) {
+      var host = $("suggest-" + field), seen = new Set(), values = [];
+      host.textContent = "";
+      // Normalize suggestions only; retain the original values in saved records and inputs.
+      defaults[field].concat(cds.map(function (cd) { return cd[field] || ""; })).forEach(function (value) {
+        value = String(value).trim().replace(/\s+/g, " ");
+        if (field === "manufacturer" && /^universal\s*m\s*&\s*l(?:,\s*germany)?$/i.test(value)) value = "Universal M&L";
+        if (field === "madeIn") {
+          if (/^(?:US|USA|U\.S\.|U\.S\.A\.)$/i.test(value)) value = "United States";
+          if (/^(?:Europe|Austria|Korea|Netherlands)$/i.test(value)) return;
+        }
+        var key = value.toLowerCase();
+        if (!value || seen.has(key)) return;
+        seen.add(key);
+        values.push(value);
+      });
+      values.sort(function (a, b) {
+        if (field === "madeIn") {
+          var rank = function (value) { return value === "West Germany" ? 0 : value === "Japan" ? 1 : 2; };
+          if (rank(a) !== rank(b)) return rank(a) - rank(b);
+        }
+        return cmpText(a, b);
+      }).forEach(function (value) { var option = el("option"); option.value = value; host.appendChild(option); });
+    });
   }
   function fillComposers() {
     var dl = $("composers");
@@ -6825,7 +6852,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var next = Date.parse(p.handleChangedAt) + HANDLE_COOLDOWN_DAYS * 86400000;
     var locked = p.handlePolicy !== true || (HANDLE_COOLDOWN_DAYS > 0 && next > Date.now());
     $("pf-handle").readOnly = locked;
-    $("pf-handle").setAttribute("aria-describedby", "pf-handle-policy");
+    $("pf-handle").setAttribute("aria-describedby", "pf-handle-hint pf-handle-policy");
     var message = p.handlePolicy !== true ? t(p.handlePolicy === false ? "pfHandleSchema" : "pfHandleUnavailable") : HANDLE_COOLDOWN_DAYS > 0 ? t("pfHandleRule") : "";
     $("pf-handle-policy").textContent = message;
     $("pf-handle-policy").hidden = !message;
@@ -7934,7 +7961,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("set-total").value = set ? setTotal(setMembers(set.id)) : 2;
     $("set-err").textContent = ""; $("set-editor").hidden = !set;
   }
-  ["minus","plus"].forEach(function(direction){$("quantity-"+direction).addEventListener("click",function() {var input=$("collection-quantity");input.value=Math.max(1,Math.min(9999,(Number(input.value)||1)+(direction==="plus"?1:-1)));input.dispatchEvent(new Event("input",{bubbles:true}));});});
   $("set-choice").addEventListener("change", function () {
     if (discEditorBusy()) return;
     ensureDiscSession(); captureDiscEntry();

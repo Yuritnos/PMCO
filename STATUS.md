@@ -2,7 +2,15 @@
 
 Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: improvements 3.2 — build 49 delivered (2026-11-08)
+## Current milestone: display corrections and non-admin installer launch (2026-11-08)
+
+- Fixed card-default/backup information icons to stay beside their captions. Statistics keeps Total playing time immediately after Works in a four-tile desktop row, with paired rows on narrow screens. Restored normal User ID hint wrapping and joined the monthly notice into the same paragraph. Removed duplicate quantity +/− controls; native number arrows, validation and persistence remain.
+- Suggestion lists now use Universal M&L and RCA Red Seal once, merge US into United States, put West Germany/Japan first and omit Europe/Austria/Korea/Netherlands. Normalization affects options only; saved metadata and untouched editor values remain unchanged.
+- Confirmed the NSIS Temp error is caused by an inherited Low mandatory integrity label on local installer files. The normal shell runs at Medium; an isolated NSIS bootstrap probe exited 2 with Low and 0 after setting only that file to Medium. Added scripts/prepare-local-installers.ps1 to apply Medium to the two verified delivered packages and check unchanged hashes. Per-user installer mode, global TEMP/security settings and folder permissions are unchanged.
+- **47 unique browser checks passed**: improvements-32 (8), collection integration (38), focused persistence/statistics (1). The reported 38 h 18 min length also passed. Layout checks cover en/ja/zh at 420–1280 px; screenshots reviewed under %TEMP%/pmco-display-qa/. All checks use isolated fixtures/mocked services.
+- Windows build/download and staged installer verification pending. Version remains 0.3.0. Unrelated website/spreadsheet/video work is excluded; no owner collection/account/drive or installed-app change.
+
+## Previous milestone: improvements 3.2 — build 49 delivered (2026-11-08)
 
 - Added common/free-text suggestions for label, issuing company, manufacturer and country, including values already present in the collection. Discogs issuing-company credits were not mapped: Record Company/Distributed By/Marketed By/Licensed To are now recognized. Recording year has no dedicated field in the existing response handling; explicit Recorded notes now supply recording years, while release/copyright years alone do not. Sparse source data remains blank for review.
 - Settings help moved into hover/focus/click information icons for card defaults, audio location, data and backup restore. Import stays with exports in Data. User ID explanation is one scrollable line. List view now has independent default fields in Settings, keeping existing defaults and two-person summaries.
