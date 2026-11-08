@@ -2,12 +2,16 @@
 
 Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: full-width manufacturer alias correction (2026-11-08)
+## Current milestone: full-width manufacturer alias correction — build 53 delivered (2026-11-08)
 
 - Follow-up diagnosis confirmed the installed and running app is build 52. Two visually similar manufacturer entries use full-width **＆ (U+FF06)**, while previous matching and fixtures used ASCII **& (U+0026)**. Build 52 therefore still displayed three entries. The earlier completion claim missed this Unicode distinction.
 - Known manufacturer aliases now match after **NFKC** compatibility normalization, collapsing the typo, spacing and full-width variants into **Universal M&L**. Normalization is limited to recognition of this known alias; saved metadata, editor values and unrelated custom manufacturer names remain untouched.
 - Focused suggestion regression passed using an isolated collection with ASCII/full-width ampersands, full-width letters, an unrelated full-width custom name, and an edit/save round trip preserving original text. Production collection inspection was read-only and limited to manufacturer spellings/code points; no owner collection/account/drive was used in tests.
-- Corrected Windows build/download pending. Website publishing remains explicitly deferred by the owner; no new installation, version change, tag/release or hosted changes.
+- **Build 53 delivered**, [Actions run 42462498535](https://github.com/Yuritnos/PMCO/actions/runs/42462498535), exact source **5ae46afaee2ec2b92699b9a406de960d34496a16**. **25 native CI tests passed**, plus the focused Unicode suggestion regression above. Version remains 0.3.0.
+- Artifact **13609894260**, ZIP **8,547,475 bytes**, SHA-256 **15c5191290485c6ae19bee98bccde7b8e511857b4902f87fb74b784a027f1f64**, matches GitHub's digest. Both packages pass integrity/extraction, x64 PMCO.exe 0.3.0, unchanged MSI upgrade identity, nine matching FLAC resources and normalized app-payload equivalence.
+- Replaced **installers/nsis/PMCO_0.3.0_x64-setup.exe** (**3,981,179 bytes**, SHA-256 **B49C1B4D5438C81B1658F81085A5DC2645615F8AFCCC1E3D5309FC8AA84BDEB3**) and **installers/msi/PMCO_0.3.0_x64_en-US.msi** (**4,784,128 bytes**, SHA-256 **9E87C35FDA85B2FAF3E626B76B748827AFF84950D43214C3D8BEDB16527E1C3D**). Both final files match staging and have explicit Medium integrity labels. Verified build-52 packages/source are preserved in **installers/rollback-before-manufacturer-unicode-20261108/**.
+- Evidence: **installers/staging-manufacturer-unicode-42462498535/{artifact,verification,replacement,integrity-labels}.json** and build.log. The running installation was confirmed as build 52 before diagnosis; build 53 has been downloaded, not installed. The owner must install it for the running app to receive the correction.
+- Website publishing remains explicitly deferred by the owner. No app installation, collection write, version change, tag/release or hosted changes; unrelated website/video/spreadsheet work remains local and excluded.
 
 ## Previous milestone: manufacturer suggestion correction — build 52 delivered (2026-11-08)
 
