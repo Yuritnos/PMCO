@@ -2,11 +2,16 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: Disc-specific matrices and card display (2026-11-09)
+## Current milestone: PMCO 0.3.1 build 56 delivered (2026-11-09)
 
 - [Discogs release 10374216](https://www.discogs.com/release/10374216) for barcode **028942761124** explicitly labels **427 612-2 01 #** as **CD1** and **427 613-2 01 #** as **CD2**. PMCO previously joined those values into one field and copied it to each item. Auto-fill now uses disc-labelled identifiers and preserves distinct pressing variants within that disc. Ambiguous matrix numbers on sets require manual entry.
 - Shelf card titles are limited to three visual lines, with full text in the profile and on hover. Removed the catalogue-progress and collection-quantity notes from profiles. Quantities above one display as **xN** at the lower right of the shelf card and profile.
-- Focused lookup and browser regressions passed. Windows **0.3.1** build pending.
+- **81 frontend checks passed** across lookup normalization (18), media editor (25, including a focused rerun after preserving direct matrix searches) and collection integration (38). The public release fixture verifies both disc-specific values through auto-fill, save and reopen.
+- **PMCO 0.3.1 build 56 delivered.** [Windows CI run 42622946362](https://github.com/Yuritnos/PMCO/actions/runs/42622946362) built **fb26754253e8560996c85294676294d0268584ea** and passed **25 native tests**.
+- Artifact **13676808570**, ZIP **8,544,753 bytes**, SHA-256 **34bbf0d52907456a7a500bb0410b812f944bfd7f34cf6a47a4d70d5a2c6a398c**. Both packages passed archive integrity, PMCO.exe 0.3.1 x64, MSI upgrade identity, nine matching FLAC resources and normalized executable comparison.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,981,946 bytes, SHA-256 **CB1AACBF19B4F8F5F8E83598383CD01393590094CE7FD0CE589537E769090E77**). Verified Medium integrity label.
+- Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,780,032 bytes, SHA-256 **76CBA22A23EAA463F69EC1CD803C959953179F00542BE61C45B3DFBFCF959551**). Verified Medium integrity label.
+- Build 55 installers and source are archived in **installers/rollback-before-matrix-and-card-20261109/**. Build evidence is in **installers/staging-0.3.1-42622946362/**. The public site serves build 54.
 
 ## Previous milestone: PMCO 0.3.1 build 55 delivered (2026-11-09)
 
