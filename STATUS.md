@@ -2,7 +2,12 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 57 and English-only website published (2026-11-09)
+## Current milestone: Six-row Statistics charts (2026-11-09)
+
+- Removed Release decades. Composers and labels show their six highest counts. Items added each year selects the six busiest years and displays them chronologically. The physical media chart still uses the six sidebar categories.
+- Three focused browser checks passed for the six-row limit, media navigation, and narrow layout in all three app languages. Windows **0.3.1** build pending.
+
+## Previous milestone: PMCO 0.3.1 build 57 and English-only website published (2026-11-09)
 
 - [Discogs release 37843299](https://www.discogs.com/release/37843299) for barcode **9787884182404** lists 21 tracks below each of the Vinyl and CD format headings. PMCO treated those headings as work titles. The importer now treats format headings as boundaries and preserves musical headings and indexes.
 - The public Discogs fixture saves **21 independent works per disc** and preserves duration, audio order and the **10/11** vinyl side split. **44 frontend checks passed** across lookup normalization (18) and media editor (26).

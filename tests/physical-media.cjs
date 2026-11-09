@@ -142,6 +142,23 @@ async function main() {
       assert.equal(await page.locator('#grid .card').count(),1);
     } finally {await f.close();}
   });
+  await test('Statistics omits release decades and shows at most six rows per chart',async()=>{
+    const extra=[8,1,7,6,2,5,4,3].flatMap((count,index)=>Array.from({length:count},(_,item)=>({
+      id:'stats-'+index+'-'+item,title:'Statistics fixture',composer:'Composer '+index,label:'Label '+index,
+      releaseYear:String(1950+index*10),addedAt:new Date(2014+index,6,1).getTime()
+    })));
+    const f=await fixture({extra}),{page}=f;
+    try {
+      await page.locator('#open-stats').click();
+      const groups=page.locator('.stat-group');
+      assert.deepEqual(await groups.locator('h3').allTextContents(),
+        ['Composers','Physical items by medium','Labels','items added each year']);
+      for(const group of await groups.all()) assert.equal(await group.locator('.bars li').count(),6);
+      assert.deepEqual(await groups.nth(0).locator('.bl').allTextContents(),[0,2,3,5,6,7].map(n=>'Composer '+n));
+      assert.deepEqual(await groups.nth(2).locator('.bl').allTextContents(),[0,2,3,5,6,7].map(n=>'Label '+n));
+      assert.deepEqual(await groups.nth(3).locator('.bl').allTextContents(),['2014','2016','2017','2019','2020','2021']);
+    } finally { await f.close(); }
+  });
   await test('queue labels the source on top-level work/release rows and never repeats it on unfolded tracks',async()=>{
     const f=await fixture({native:true,extra:optical}),{page,state}=f;
     try {
