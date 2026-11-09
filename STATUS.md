@@ -2,10 +2,15 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: Six-row Statistics charts (2026-11-09)
+## Current milestone: PMCO 0.3.1 build 58 delivered (2026-11-09)
 
 - Removed Release decades. Composers and labels show their six highest counts. Items added each year selects the six busiest years and displays them chronologically. The physical media chart still uses the six sidebar categories.
-- Three focused browser checks passed for the six-row limit, media navigation, and narrow layout in all three app languages. Windows **0.3.1** build pending.
+- Three focused browser checks passed for the six-row limit, media navigation, and narrow layout in all three app languages.
+- **PMCO 0.3.1 build 58 delivered.** [Windows CI run 42648936739](https://github.com/Yuritnos/PMCO/actions/runs/42648936739) built **6b3b6f2dd0e6b77fa0846f1dfe9b9a9d6098553e** and passed **25 native tests**.
+- Artifact **13688587880**, ZIP **8,549,792 bytes**, SHA-256 **8c9501fb2cd0dfdb6754958f25e8af21fa36deb7cc74d22d60511cb587508e86**. Both packages passed archive integrity, PMCO.exe 0.3.1 x64, MSI upgrade identity, nine matching FLAC resources and normalized executable comparison.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,982,150 bytes, SHA-256 **85F77DD8101A936FDFB29293C764B1C78D6654DEA8EA74AB8B10225EDB116BE2**). Verified Medium integrity label.
+- Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,788,224 bytes, SHA-256 **EA73550DE73098949B0DCAED79EB637DE41CD61845974C10578983F5052C7211**). Verified Medium integrity label.
+- Build 57 installers and source are archived in **installers/rollback-before-statistics-20261109/**. Build evidence is in **installers/staging-0.3.1-42648936739/**.
 
 ## Previous milestone: PMCO 0.3.1 build 57 and English-only website published (2026-11-09)
 
