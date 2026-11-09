@@ -1,0 +1,31 @@
+{
+  "source": "https://api.discogs.com/releases/20011237",
+  "id": 20011237,
+  "title": "灯华梦踏: Chinese Orchestra For Ambience Synesthesia",
+  "formats": [
+    {
+      "name": "Vinyl",
+      "qty": "1",
+      "descriptions": [
+        "12\"",
+        "33 ⅓ RPM",
+        "Single Sided"
+      ]
+    }
+  ],
+  "tracklist": [
+    {
+      "position": "A",
+      "type_": "track",
+      "title": "灯华梦踏",
+      "duration": ""
+    }
+  ],
+  "identifiers": [
+    {
+      "type": "Barcode",
+      "value": "9 787884 181865",
+      "description": "Jacket"
+    }
+  ]
+}

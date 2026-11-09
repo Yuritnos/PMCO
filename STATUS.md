@@ -1,8 +1,14 @@
 # PMCO current status
 
-Updated: 2026-11-08 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
+Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: full-width manufacturer alias correction — build 53 delivered (2026-11-08)
+## Current milestone: PMCO 0.3.1 Windows build and website update (2026-11-09)
+
+- Discogs release **20011237** for barcode **9787884181865** lists **灯华梦踏** once at position **A**, with a blank duration and a **Single Sided** format description. PMCO previously excluded position-bearing tracks from its duplicate-title collapse, and the editor added the default reverse side. The screenshot’s **13:17** was the input placeholder.
+- Vinyl lookup now folds a matching sole track into its work while retaining the printed position, duration and one audio slot. An explicitly single-sided release or a listing with all positions on its first side omits the empty reverse tab. Per-item side data stays separate in sets. Unknown sides keep the editable defaults.
+- **39 checks passed** across lookup normalization (17) and media editor (22), including barcode auto-fill/save/reopen with the public Discogs fixture and mixed side layouts. Compared the previous and corrected importer outputs against the same fixture. PMCO 0.3.1 includes this correction. Windows build and website delivery are in progress.
+
+## Previous milestone: full-width manufacturer alias correction — build 53 delivered (2026-11-08)
 
 - Follow-up diagnosis confirmed the installed and running app is build 52. Two visually similar manufacturer entries use full-width **＆ (U+FF06)**, while previous matching and fixtures used ASCII **& (U+0026)**. Build 52 therefore still displayed three entries. The earlier completion claim missed this Unicode distinction.
 - Known manufacturer aliases now match after **NFKC** compatibility normalization, collapsing the typo, spacing and full-width variants into **Universal M&L**. Normalization is limited to recognition of this known alias; saved metadata, editor values and unrelated custom manufacturer names remain untouched.

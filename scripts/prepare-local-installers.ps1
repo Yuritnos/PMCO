@@ -7,9 +7,11 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Installer integrity labels require Windows' }
+$configPath = Join-Path $PSScriptRoot "../src-tauri/tauri.conf.json"
+$version = (Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json).version
 $packages = @(
-  @{ Path=$NsisPath; Name='PMCO_0.3.0_x64-setup.exe' },
-  @{ Path=$MsiPath; Name='PMCO_0.3.0_x64_en-US.msi' }
+  @{ Path=$NsisPath; Name="PMCO_${version}_x64-setup.exe" },
+  @{ Path=$MsiPath; Name="PMCO_${version}_x64_en-US.msi" }
 )
 # Validate both destinations before changing either.
 foreach ($package in $packages) {

@@ -4010,6 +4010,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   $("add-work").addEventListener("click", function () { addWork().focus(); });
   var formSides = [], activeVinylSide = "a";
   // Legacy printed positions are interpreted only for display/editing, never rewritten on load.
+  function vinylSideFromPosition(position) {
+    var match = /^([A-Z])\d*$/i.exec(String(position || "").trim());
+    return match ? ((match[1].toUpperCase().charCodeAt(0) - 65) % 2 === 0 ? "a" : "b") : "";
+  }
   function vinylLayout(list, savedSides) {
     var sides = clone(savedSides || []), works = [];
     function side(id) {
@@ -4019,12 +4023,15 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     (list || []).forEach(function (w) {
       var chunks = [];
       (w.tracks || []).forEach(function (tr) {
-        var match = /^([A-Z])\d*$/i.exec(tr.position || ""), id = w.side || (match ? String.fromCharCode(97 + (match[1].toUpperCase().charCodeAt(0) - 65) % 2) : sides[0] && sides[0].id || "a");
+        var id = w.side || vinylSideFromPosition(tr.position) || (sides[0] && sides[0].id) || "a";
         var last = chunks[chunks.length - 1];
         if (!last || last.side !== id) { last = Object.assign({}, clone(w), {side:side(id), tracks:[]}); chunks.push(last); }
         last.tracks.push(clone(tr));
       });
-      if (!chunks.length) chunks.push(Object.assign({}, clone(w), {side:side(w.side || sides[0] && sides[0].id || "a")}));
+      if (!chunks.length) {
+        var id = w.side || vinylSideFromPosition(w.position) || (sides[0] && sides[0].id) || "a";
+        chunks.push(Object.assign({}, clone(w), {side:side(id)}));
+      }
       works = works.concat(chunks);
     });
     if (!sides.length) side("a");
@@ -8356,19 +8363,23 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   /* Promote metadata only when every actual work supplies it, across all source discs. */
   function dgNormalizeWorks(out) {
-    var works = out.lookupDiscs ? [].concat.apply([], out.lookupDiscs.map(function (d) { return d.works; })) : out.works;
+    var discs = out.lookupDiscs || [out];
+    var works = [].concat.apply([], discs.map(function (disc) { return disc.works; }));
     if (!works.length) return out;
     /* Lookup only: an independent piece repeated as its sole track is a work with a duration.
        Keep distinct movement labels and musical accidentals significant when comparing titles. */
     function titleKey(title) {
       return String(title || "").normalize("NFKC").toLowerCase().replace(/[\s.,:;!?'"“”‘’()[\]{}\-‐‑‒–—…·]/g, "");
     }
-    works.forEach(function (w) {
-      var key = titleKey(w.title);
-      if (key && w.tracks.length === 1 && !w.tracks[0].position && key === titleKey(w.tracks[0].title)) {
-        w.duration = w.tracks[0].duration;
+    discs.forEach(function (disc) {
+      disc.works.forEach(function (w) {
+        if (w.tracks.length !== 1) return;
+        var track = w.tracks[0], key = titleKey(w.title);
+        if (!key || key !== titleKey(track.title) || (track.position && disc.medium !== "vinyl")) return;
+        if (track.position) w.position = track.position;
+        w.duration = track.duration;
         w.tracks = [];
-      }
+      });
     });
     ["type", "composer"].forEach(function (field) {
       var common = works.length && works[0][field];
@@ -8393,7 +8404,13 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       var name = String(f.name || ""), medium = map[name];
       if (name === "Memory Stick" && /\b(?:micro\s*)?SD(?:HC|XC)?\b/i.test((f.descriptions || []).join(" ") + " " + (f.text || ""))) medium = "sd";
       if (!medium && /^(Box Set|All Media|File)$/i.test(name)) return;
-      for (var i = 0, qty = Math.min(999, Math.max(1, parseInt(f.qty, 10) || 1)); i < qty; i++) out.push({ medium: medium || "other", mediumName: medium ? "" : name });
+      var singleSided = medium === "vinyl" && (f.descriptions || []).some(function (description) { return /^single sided$/i.test(description); });
+      for (var i = 0, qty = Math.min(999, Math.max(1, parseInt(f.qty, 10) || 1)); i < qty; i++) {
+        var item = { medium: medium || "other", mediumName: medium ? "" : name };
+        // An explicit side list lets the editor infer sides without adding a blank reverse.
+        if (singleSided) item.sides = [];
+        out.push(item);
+      }
     });
     return out;
   }
@@ -8698,12 +8715,17 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     } else if (onlyFilled("#perf-rows .perf-name")) {
       resetRows();
     }
+    var sides = p.sides;
+    if (!sides && p.medium === "vinyl" && p.works && p.works.length && p.works.every(function (work) {
+      var slots = work.tracks && work.tracks.length ? work.tracks : [work];
+      return slots.every(function (slot) { return (work.side || vinylSideFromPosition(slot.position)) === "a"; });
+    })) sides = [];
     if (p.works && p.works.length) {
-      resetWorks(p.works, p.sides);
+      resetWorks(p.works, sides);
       qsa("#work-list input:not([type=checkbox])").forEach(function (i) { if (i.value) i.classList.add("filled"); });
       p.works.forEach(function (w) { n += (w.title ? 1 : 0) + (w.tracks || []).length; });
     } else if (onlyFilled("#work-list input")) {
-      resetWorks();
+      resetWorks(undefined, sides);
     }
     var before = n;
     ["label", "issuer", "catalogNo", "matrixRunout", "manufacturer", "madeIn", "recordingVenue", "barcode", "ifpiMastering", "ifpiMould"].forEach(function (f) { put(f, p[f]); });
@@ -8760,6 +8782,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var out = Object.assign({}, release);
     delete out.lookupDiscs; delete out.lookupDisc;
     if (disc.medium) { out.medium = disc.medium; out.mediumName = disc.mediumName || ""; }
+    out.sides = disc.sides;
     out.works = clone(disc.works || []).map(function (w) {
       var resolved = workMetadata(release, w);
       Object.assign(w, resolved); delete w.performersMode; return w;
@@ -8776,7 +8799,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         first.number = formDiscNumber = 1; discSession.lookupSet = false;
       }
       first.include = true; first.lookupDisc = 0;
-      n = fillFromLookup(lookupDiscData(release, { works: release.works }));
+      n = fillFromLookup(lookupDiscData(release, release));
       captureDiscEntry(); renderDiscButtons(); return n;
     }
     if (!formSetId) {

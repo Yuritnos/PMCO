@@ -279,6 +279,64 @@ async function main() {
       assert.equal(await page.locator('#vinyl-sides button[data-side=b]').getAttribute('aria-pressed'),'true'); assert.equal(await page.locator('.work:visible .w-duration').inputValue(),'bad'); assert.equal(await page.locator('.work:visible .w-duration').evaluate(n=>n===document.activeElement),true);
     } finally {await f.close();}
   });
+  await test('barcode 9787884181865 imports one work, one audio slot and only Side A',async()=>{
+    const f=await fixture(),{page,state}=f;
+    const release=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/discogs-20011237.json'),'utf8'));
+    try {
+      await page.route('https://api.discogs.com/database/search?**',route=>{
+        const query=new URL(route.request().url()).searchParams;
+        assert.equal(query.get('barcode'),'9787884181865');
+        assert.equal(query.get('format'),'Vinyl');
+        return route.fulfill({json:{results:[{id:release.id,title:release.title,barcode:['9 787884 181865'],format:['Vinyl']}]}});
+      });
+      await page.route('https://api.discogs.com/releases/'+release.id,route=>route.fulfill({json:release}));
+      await page.locator('#open-add').click();
+      await page.locator('#medium').selectOption('vinyl');
+      await page.locator('#lookup-q').fill('9787884181865');
+      await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').click();
+      await page.waitForFunction(title=>document.getElementById('title').value===title,release.title);
+      assert.equal(await page.locator('#work-list .w-title').inputValue(),'灯华梦踏');
+      assert.equal(await page.locator('#work-list .trow').count(),0);
+      assert(await page.locator('#work-list .w-duration').isVisible());
+      assert.equal(await page.locator('#work-list .w-duration').inputValue(),'');
+      assert.deepEqual(await page.locator('#vinyl-sides button[data-side]').allTextContents(),['Side A']);
+      assert(await page.locator('#vinyl-add-side').isVisible());
+      await save(page);
+      const saved=state.doc.cds.find(cd=>cd.title===release.title);
+      assert.deepEqual(saved.sides.map(s=>s.id),['a']);
+      assert.deepEqual(saved.works.map(w=>[w.title,w.side,w.position,w.tracks]),[['灯华梦踏','a','A',[]]]);
+      assert.deepEqual((await page.evaluate(cd=>mediaQA.discTracks(cd),saved)).map(slot=>slot.position),['A · 1']);
+      await page.reload();
+      await page.evaluate(cd=>mediaQA.startEdit(cd),saved);
+      assert.deepEqual(await page.locator('#vinyl-sides button[data-side]').allTextContents(),['Side A']);
+    } finally {await f.close();}
+  });
+  await test('vinyl lookup keeps documented sides for each disc in a set',async()=>{
+    const f=await fixture(),{page,state}=f;
+    try {
+      const release={id:3102,title:'Sided vinyl lookup fixture',formats:[
+        {name:'Vinyl',qty:'1',descriptions:['Single Sided']},{name:'Vinyl',qty:'3'}
+      ],tracklist:[
+        {type_:'track',position:'LP1-1',title:'First disc',duration:'1:00'},
+        {type_:'track',position:'C1',title:'Second front',duration:'2:00'},
+        {type_:'track',position:'D1',title:'Second back',duration:'3:00'},
+        {type_:'track',position:'E1',title:'Third disc',duration:'4:00'},
+        {type_:'track',position:'LP4-1',title:'Unknown sides',duration:'5:00'}
+      ]};
+      await page.route('https://api.discogs.com/releases/3102',route=>route.fulfill({json:release}));
+      const result=await page.evaluate(()=>mediaQA.discogsSource.details({id:3102},''));
+      await page.locator('#open-add').click();
+      await page.evaluate(data=>mediaQA.populateLookupDrafts(data),result);
+      await save(page);
+      const discs=state.doc.cds.filter(cd=>cd.set?.title===release.title).sort((a,b)=>a.set.disc-b.set.disc);
+      assert.deepEqual(discs.map(cd=>cd.sides.map(s=>s.id)),[['a'],['a','b'],['a'],['a','b']]);
+      assert.deepEqual(discs[1].works.map(w=>[w.side,w.position,w.duration,w.tracks]),[
+        ['a','C1','2:00',[]],['b','D1','3:00',[]]
+      ]);
+      assert.deepEqual((await page.evaluate(cd=>mediaQA.discTracks(cd),discs[1])).map(slot=>slot.position),['A · 1','B · 1']);
+    } finally {await f.close();}
+  });
   await test('reported LP + CD pattern maps plain/CD-prefixed tracks to CD; matrix lookup never overwrites catalogue',async()=>{
     const f=await fixture(),{page,state}=f;
     try {
