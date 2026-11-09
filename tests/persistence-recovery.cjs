@@ -222,7 +222,8 @@ async function main(){
           assert(await page.locator('.stat-tile.time b').evaluate(n=>n.scrollWidth<=n.parentElement.clientWidth));
           assert.equal(await page.locator('.bars li').evaluateAll(rows=>rows.filter(r=>r.querySelector('.bv').textContent==='0').filter(r=>getComputedStyle(r.querySelector('.fill')).display!=='none').length),0);
         }
-        if(lang==='en'){assert.equal(await page.locator('.stat-tile').first().textContent(),'1Album');assert.equal(await page.locator('#set-stats').textContent(),'1 item · 1 favorite list');}
+        if(lang==='en') assert.equal(await page.locator('.stat-tile').first().textContent(),'1Album');
+        assert.equal(await page.locator('#set-stats,#set-storage').count(),0);
         const out=process.env.CDC_QA_ARTIFACTS||path.join(os.tmpdir(),'pmco-persistence-qa');fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,'stats-'+lang+'.png')});
         await page.locator('#close-stats').click();await page.setViewportSize({width:1280,height:900});
       }

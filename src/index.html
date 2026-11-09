@@ -1221,8 +1221,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
             <span class="avatar big" id="set-initial" aria-hidden="true"></span>
             <div>
               <p class="acct-name" id="set-name"></p>
-              <p class="hint" id="set-storage"></p>
-              <p class="hint" id="set-stats"></p>
             </div>
           </div>
           <p class="hint" id="acct-note" data-i18n="acctNote">Your account comes from your Claude sign-in. To switch accounts, sign in to Claude with another one.</p>
@@ -1335,7 +1333,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           <div id="lookup-disc-choices" hidden></div>
           <p class="hint" id="lookup-disc-preview" role="status"></p>
         </div>
-        <p class="hint" data-i18n="lookupNote">Details come from Discogs, an online music database. The release you choose replaces the details it has; nothing is saved until you add the CD.</p>
       </section>
 
       <div class="field">
@@ -1343,11 +1340,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           <label class="drop" id="drop" for="photo">
             <span class="disc" id="drop-glyph" style="--s:72px" aria-hidden="true"></span>
             <canvas id="cover-canvas" width="480" height="480" tabindex="0" hidden data-i18n-aria="coverCropAria" aria-label="Cover position. Drag, or use the arrow keys; plus and minus zoom."></canvas>
-            <input class="sr" type="file" id="photo" accept="image/*">
+            <input class="sr" type="file" id="photo" accept="image/*" aria-labelledby="photo-title">
           </label>
           <div class="photo-side">
             <strong id="photo-title">Cover</strong>
-            <p id="photo-hint">Drop an image here or choose one. A front cover or the disc itself both work.</p>
+            <p id="photo-hint" hidden></p>
             <div class="range" id="cover-zoom-row" hidden>
               <span aria-hidden="true">−</span>
               <input type="range" id="cover-zoom" min="1" max="4" step="0.01" value="1" data-i18n-aria="pfZoom" aria-label="Zoom">
@@ -2740,13 +2737,18 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   Object.assign(I18N.zh, { editSide: "编辑面的名称", editItem: "编辑本件媒介", itemName: "本件名称", itemNamePh: "例如：附赠碟", mediumNamePh: "例如：开盘带", matrixRunoutPh: "例如：410 084-2", recordSizePh: '例如：12″', recordSpeedPh: "例如：33⅓", recordColourPh: "例如：黑胶", tapeTypePh: "例如：Type II (Chrome)", noiseReductionPh: "例如：Dolby B", sacdHybridPh: "例如：混合盘、双层", audioProgramsPh: "例如：立体声 / 5.1", sparsNone: "例如：DDD", setErr: "请输入标题及1至999的整数总数，各件编号不能超过总数。" });
   var mediaOpen = true;
   try { mediaOpen = localStorage.getItem("cdc.mediaopen") !== "0"; } catch (e) { /* storage unavailable */ }
+  Object.assign(I18N.en, { musicEdit: "Edit music", musicInformation: "Album information", musicWorks: "Works on this album", musicInheritHint: "Works use the album information unless you enter different values in Work details.", "medium.audio": "Audio files", musicEmpty: "Add audio files to an album to see them here." });
+  Object.assign(I18N.ja, { musicEdit: "音楽を編集", musicInformation: "アルバム情報", musicWorks: "アルバムの収録作品", musicInheritHint: "「作品の詳細」で変更しない限り、アルバムの情報が使われます。", "medium.audio": "音声ファイル", musicEmpty: "アルバムに追加した音声ファイルがここに表示されます。" });
+  Object.assign(I18N.zh, { musicEdit: "编辑音乐", musicInformation: "专辑信息", musicWorks: "专辑收录作品", musicInheritHint: "各作品默认使用专辑信息，可在「作品详情」中单独修改。", "medium.audio": "音频文件", musicEmpty: "将音频文件添加到专辑后即可在此查看。" });
+  function isMusicOnly(cd) { return !!cd && cd.musicOnly === true; }
+  function physicalCds() { return cds.filter(function (cd) { return !isMusicOnly(cd); }); }
   function mediumGroup(cd) { var m = mediumOf(cd); return MEDIA.indexOf(m) >= 0 ? m : "other"; }
-  function mediumCategory(cd) { var m = mediumGroup(cd); return m === "dvd" || m === "bluray" ? "dvd-bluray" : m; }
+  function mediumCategory(cd) { if (isMusicOnly(cd)) return "audio"; var m = mediumGroup(cd); return m === "dvd" || m === "bluray" ? "dvd-bluray" : m; }
   function mediumCategoryText(m) { return t(m === "other" ? "mediumOther" : "medium." + m); }
   function defaultMediumForView() { var m = mediumView(); return m === "dvd-bluray" ? "dvd" : m || "cd"; }
   function addReleaseText() { var m = mediumView(); return m && m !== "other" ? t("addMedium." + m) : t("add"); }
-  function mediumOf(cd) { return cd && cd.medium || "cd"; }
-  function mediumText(cd) { var m = mediumOf(cd); return m === "other" && cd.mediumName ? cd.mediumName : m === "usb" || m === "sd" ? t("medium." + m) : MEDIA.indexOf(m) < 0 ? m : t("medium." + m); }
+  function mediumOf(cd) { return isMusicOnly(cd) ? "audio" : cd && cd.medium || "cd"; }
+  function mediumText(cd) { if (isMusicOnly(cd)) return t("medium.audio"); var m = mediumOf(cd); return m === "other" && cd.mediumName ? cd.mediumName : m === "usb" || m === "sd" ? t("medium." + m) : MEDIA.indexOf(m) < 0 ? m : t("medium." + m); }
   function mediumView() { return currentAlbum.indexOf("media:") === 0 ? currentAlbum.slice(6) : ""; }
   function mediumMatches(cd, view) { return mediumCategory(cd) === view; }
   function mediumSummary(list) { var counts = {}; list.forEach(function (c) { var k = mediumText(c); counts[k] = (counts[k] || 0) + 1; }); return Object.keys(counts).map(function (k) { return counts[k] + " " + k; }).join(" · "); }
@@ -2792,10 +2794,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     Object.keys(MEDIUM_FIELDS).forEach(function (f) { $(f).parentElement.hidden = MEDIUM_FIELDS[f].indexOf(m) < 0; });
     ["ifpiMastering", "ifpiMould", "hub"].forEach(function (f) { $(f).closest(".field").hidden = ["cd", "sacd"].indexOf(m) < 0; });
     var cd = { medium:m, mediumName:$("mediumName").value.trim() };
-    $("albumOverall").querySelector("summary > span").textContent = mediumSection(cd, false);
+    $("albumOverall").querySelector("summary > span").textContent = formMusicOnly ? t("musicInformation") : mediumSection(cd, false);
+    $("albumOverall").querySelector("[data-i18n=workInheritHint]").textContent = t(formMusicOnly ? "musicInheritHint" : "workInheritHint");
+    $("works-set").querySelector("summary > span").textContent = t(formMusicOnly ? "musicWorks" : "works");
     $("more-details").querySelector("summary").textContent = mediumSection(cd, true);
     document.querySelector('label[for="matrixRunout"]').textContent = t(m === "vinyl" ? "vinylMatrix" : "matrixRunout");
-    $("drive-section").hidden = !IS_TAURI || m !== "cd";
+    $("drive-section").hidden = formMusicOnly || !IS_TAURI || m !== "cd";
     setupMediumSuggestions(); updateSideEditor(); renumberTracks();
   }
 
@@ -3155,12 +3159,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     Object.keys(animatedSelects).forEach(syncAnimatedSelect);
     renderFab();
   }
-  /* The round button at the bottom right: "Add a CD" on the shelf, "Add music" in a playlist,
-     and none in All music (which only lists CDs that already have audio). */
   function renderFab() {
     var pl = currentPlaylistId() && findPlaylist(currentPlaylistId());
-    $("open-add").hidden = currentAlbum === "music";
-    $("fab-text").textContent = pl ? t("plAddMusic") : addReleaseText();
+    $("open-add").hidden = currentAlbum === "music" && !AudioLib.ready;
+    $("fab-text").textContent = pl || currentAlbum === "music" ? t("plAddMusic") : addReleaseText();
   }
   function fillMetadataSuggestions() {
     var defaults = {
@@ -3268,7 +3270,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     stack.push(id);
     document.body.style.overflow = "hidden";
     ov.querySelector(".panel").scrollTop = 0;
-    var first = ov.querySelector("[data-autofocus]") || ov.querySelector("button, input, select");
+    var first = (id === "cd" && formMusicOnly && $("form-audio-add")) || ov.querySelector("[data-autofocus]") || ov.querySelector("button, input, select");
     if (first) first.focus({ preventScroll: true });
   }
   function closeWin(id, force) {
@@ -3419,7 +3421,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("cover-zoom-row").hidden = !has;
     $("photo-actions").hidden = !has;
     $("photo-title").textContent = formSetId ? t("setCover") : has ? t("coverAdded") : t("cover");
-    $("photo-hint").textContent = formSetId ? t("setCoverHint") : has ? t("coverHintAdded") : t("coverHint");
+    $("photo-hint").hidden = !has;
+    $("photo-hint").textContent = has ? t(formSetId ? "setCoverHint" : "coverHintAdded") : "";
   }
   async function handleFile(file) {
     if (!file) return;
@@ -4096,7 +4099,16 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     }
     if (formSides.length === 1) {
       var add = el("button", "linkbtn", t("addSide")); add.type = "button"; add.id = "vinyl-add-side"; add.disabled = discEditorBusy();
-      add.addEventListener("click", function () { var id = formSides[0].id === "b" ? "a" : "b"; formSides.push({id:id,name:"",letter:id.toUpperCase()}); activeVinylSide = id; sideRenameOpen = ""; updateSideEditor(); }); host.appendChild(add);
+      add.addEventListener("click", function () {
+        var id = formSides[0].id === "b" ? "a" : "b";
+        formSides.push({ id: id, name: "", letter: id.toUpperCase() });
+        activeVinylSide = id;
+        sideRenameOpen = "";
+        updateSideEditor();
+        addWork({ tracks: [] }).focus();
+        renderFormAudio();
+      });
+      host.appendChild(add);
     }
     updateSideVisibility();
   }
@@ -4348,7 +4360,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   var SET_LABELS = { composer: "composer", type: "cdType", performers: "performers", label: "label", issuer: "issuer", releaseYear: "relYear", catalogNo: "catalogNo", barcode: "barcode", cover: "albumCover" };
   var formSetId = "", formSetOriginal = null, formDiscNumber = 1, discSession = null, detailDiscOnly = false;
   var setFolds = {}, setLinkOpen = false;
-  function releaseSet(cd) { return cd && cd.set && cd.set.id && cd.set.title ? cd.set : null; }
+  function releaseSet(cd) { return cd && !isMusicOnly(cd) && cd.set && cd.set.id && cd.set.title ? cd.set : null; }
   function discDisplayTitle(cd) {
     if (!releaseSet(cd)) return cd.title || "";
     return cd.set.title + " · " + t("setPosition", { n: cd.set.disc, total: cd.set.total }) + (cd.set.subtitle ? " · " + cd.set.subtitle : "");
@@ -5801,23 +5813,24 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     return out;
   }
 
-  /* The CDs with at least one audio file on this computer. Files not checked yet are asked about
-     once (AudioLib.check), and the view is drawn again when the answer comes. */
+  function hasLocalAudio(cd) { return (cd.audio || []).some(function (a) { return AudioLib.present[a.file]; }); }
+  /* Keep music-only albums reachable even on a computer that has their metadata but no audio. */
   function musicCds() {
     var files = [];
     cds.forEach(function (c) { (c.audio || []).forEach(function (a) { files.push(a.file); }); });
     AudioLib.check(files);
-    return cds.filter(function (c) { return (c.audio || []).some(function (a) { return AudioLib.present[a.file]; }); });
+    return cds.filter(function (c) { return isMusicOnly(c) || hasLocalAudio(c); });
   }
   function baseList() {
-    if (currentAlbum === "all") return cds;
-    if (mediumView()) return cds.filter(function (c) { return mediumMatches(c, mediumView()); });
     if (currentAlbum === "music") return musicCds();
+    var physical = physicalCds();
+    if (currentAlbum === "all") return physical;
+    if (mediumView()) return physical.filter(function (c) { return mediumMatches(c, mediumView()); });
     var a = findAlbum(currentAlbum);
-    if (!a) { currentAlbum = "all"; return cds; }
+    if (!a) { currentAlbum = "all"; return physical; }
     var ids = {};
     a.cdIds.forEach(function (id) { ids[id] = true; });
-    return cds.filter(function (c) { return ids[c.id]; });
+    return physical.filter(function (c) { return ids[c.id]; });
   }
 
   /* ---------- filters ----------
@@ -5871,6 +5884,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     qsa(".shelf-filter-options", $("filters")).forEach(function (node) { scrolls[node.id] = node.scrollTop; });
     var sets = { medium: Object.create(null), composer: Object.create(null), performer: Object.create(null), type: Object.create(null) };
     SHELF_MEDIA.forEach(function (m) { sets.medium[m] = true; });
+    if (base.some(isMusicOnly)) sets.medium.audio = true;
     var roles = Object.create(null);
     base.forEach(function (cd) {
       cdComposers(cd).forEach(function (c) { sets.composer[c] = true; });
@@ -5888,7 +5902,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       if (k === "medium" && currentAlbum !== "music") { $("f-medium").textContent = ""; return; }
       filters[k].forEach(function (v) { sets[k][v] = true; });
       var vals = Object.keys(sets[k]);
-      if (k === "medium") vals.sort(function (a, b) { return SHELF_MEDIA.indexOf(a) - SHELF_MEDIA.indexOf(b); });
+      if (k === "medium") { var mediaOrder = SHELF_MEDIA.concat("audio"); vals.sort(function (a, b) { return mediaOrder.indexOf(a) - mediaOrder.indexOf(b); }); }
       else if (k === "composer") vals.sort(function (a, b) { return cmpText(a, b); });
       else if (k === "performer") vals.sort(function (a, b) { return cmpText(JSON.parse(a)[1], JSON.parse(b)[1]); });
       else if (k === "type") vals.sort(function (a, b) { return cmpText(workTypeText(a), workTypeText(b)); });
@@ -5986,10 +6000,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
      Headline numbers, then bars for media, composers and labels (media/composers link to filtered shelves),
      release decades and CDs added each year. */
   function renderStats() {
+    var physical = physicalCds();
     var box = $("stats-body");
     box.textContent = "";
     var works = 0, secs = 0;
-    cds.forEach(function (cd) {
+    physical.forEach(function (cd) {
       works += (cd.works || []).length;
       secs += totalSeconds(cd);
     });
@@ -6001,8 +6016,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       tiles.appendChild(d);
       return d;
     }
-    tile(albumCountFor(cds), tn("statsAlbumLabel", albumCountFor(cds)));
-    var physicalCount=cds.reduce(function(n,c){return n+collectionQuantity(c);},0);
+    tile(albumCountFor(physical), tn("statsAlbumLabel", albumCountFor(physical)));
+    var physicalCount=physical.reduce(function(n,c){return n+collectionQuantity(c);},0);
     tile(physicalCount, tn("physicalTally", physicalCount));
     tile(works, tn("workTally", works));
     var mins = Math.max(1, Math.round(secs / 60));
@@ -6011,7 +6026,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
     function count(keysOf) {
       var n = {};
-      cds.forEach(function (cd) { keysOf(cd).forEach(function (k) { if (k) n[k] = (n[k] || 0) + 1; }); });
+      physical.forEach(function (cd) { keysOf(cd).forEach(function (k) { if (k) n[k] = (n[k] || 0) + 1; }); });
       return n;
     }
     function top(n, limit) {
@@ -6049,7 +6064,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       groups.appendChild(g);
     }
     group(t("statsComposers"), top(count(cdComposers), 8), "composer");
-    group(t("statsMedia"), SHELF_MEDIA.map(function (m) { return [m, cds.filter(function (cd) { return mediumMatches(cd, m); }).reduce(function(n,c){return n+collectionQuantity(c);},0)]; }), "medium", mediumCategoryText);
+    group(t("statsMedia"), SHELF_MEDIA.map(function (m) { return [m, physical.filter(function (cd) { return mediumMatches(cd, m); }).reduce(function(n,c){return n+collectionQuantity(c);},0)]; }), "medium", mediumCategoryText);
     group(t("statsLabels"), top(count(function (cd) { return [cd.label]; }), 8));
     var dec = count(function (cd) { return [cdDecade(cd)]; });
     group(t("statsDecades"), Object.keys(dec).sort().map(function (k) { return [k, dec[k]]; }), null,
@@ -6118,7 +6133,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var nw = el("option", null, t("selNewFav"));
     nw.value = "+new";
     fav.appendChild(nw);
-    fav.disabled = !n;
+    fav.disabled = !selectedCds().some(function (cd) { return !isMusicOnly(cd); });
     $("sel-remove").disabled = !n;
     $("sel-remove").hidden = selAsk;
     $("sel-ask").hidden = !selAsk;
@@ -6143,7 +6158,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   });
   $("sel-fav").addEventListener("change", async function (e) {
     var v = e.target.value;
-    var ids = Object.keys(selected);
+    var ids = selectedCds().filter(function (cd) { return !isMusicOnly(cd); }).map(function (cd) { return cd.id; });
     if (!v || !ids.length) return;
     if (v === "+new") { openAlbumDlg("new", null, "favorite", ids); return; }
     var a = findAlbum(v);
@@ -6410,7 +6425,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     }
     var withMusic = AudioLib.ready;
     bar.appendChild(el("p", "side-h", t("libraryHead")));
-    var all = chip("all", t("allCds"), albumCountFor(cds));
+    var physical = physicalCds();
+    var all = chip("all", t("allCds"), albumCountFor(physical));
     all.classList.add("fav-head"); all.classList.toggle("has-active", !!mediumView() && !mediaOpen);
     all.setAttribute("aria-expanded", mediaOpen ? "true" : "false"); all.setAttribute("aria-controls", "media-group");
     var lead = all.querySelector(".nm"), arrow = el("span", "chev", mediaOpen ? "▾" : "▸");
@@ -6425,7 +6441,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     bar.appendChild(all);
     var mediaGroup = el("div", "favgroup"); mediaGroup.id = "media-group"; mediaGroup.hidden = !mediaOpen;
     SHELF_MEDIA.forEach(function (m) {
-      var items = cds.filter(function (c) { return mediumMatches(c, m); });
+      var items = physical.filter(function (c) { return mediumMatches(c, m); });
       mediaGroup.appendChild(chip("media:" + m, mediumCategoryText(m), albumCountFor(items)));
     });
     bar.appendChild(mediaGroup);
@@ -6441,7 +6457,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     group.id = "fav-group";
     group.hidden = !open;
     var present = {};
-    cds.forEach(function (c) { present[c.id] = true; });
+    physical.forEach(function (c) { present[c.id] = true; });
     meta.albums.forEach(function (a) {
       var n = a.cdIds.filter(function (id) { return present[id]; }).length;
       var favChip = chip(a.id, a.name, n, "fav", a.id);
@@ -6606,7 +6622,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       if (pl.items.length > 1) { $("drag-hint").hidden = false; $("drag-hint").textContent = t("dragRows"); }
       return;
     }
-    if (!cds.length) {
+    if (currentAlbum !== "music" && !physicalCds().length) {
       resetShelfTools();
       count.textContent = shelfCount([]);
       search.hidden = true;
@@ -6677,9 +6693,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("set-name").textContent = acct.loading && !signedIn ? t("acctLoading") : (name || t("acctName"));
     if (window.CDC_DESKTOP) $("acct-note").textContent = t("acctNoteDesktop");
     $("acct-note").hidden = signedIn;
-    $("set-storage").textContent = !backend ? "" : signedIn ? t("acctStorageCloud") :
-      t(backend.kind === "db" ? "acctStorageDb" : backend.kind === "desktop" ? "acctStorageDesktop" : "acctStorageLocal");
-    $("set-stats").textContent = loaded ? tn("itemTally", cds.reduce(function(n,c){return n+collectionQuantity(c);},0)) + " · " + tn("favoriteTally", meta.albums.length) : "";
     renderCloud();
     if (document.activeElement !== $("card-size")) $("card-size").value = cardWidth();
     renderCardFields();
@@ -7389,7 +7402,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   async function doExport(kind) {
     if (!downloadsApi) return;
-    if (!cds.length) { toast(t("exportEmpty")); return; }
+    var exportList = kind === "json" ? cds : physicalCds();
+    if (!exportList.length) { toast(t("exportEmpty")); return; }
     var data, name;
     if (kind === "json") {
       var full = [];
@@ -7407,7 +7421,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       var head = ["cdTitle", "collectionQuantity", "composer", "works", "performers", "label", "issuer", "recYear", "relYear"]
         .concat(DETAIL_FIELDS.map(function (f) { return f === "recordingVenue" ? "venue" : f; }), ["notes", "albumsField"])
         .map(function (k) { return csvCell(t(k === "type" ? "cdType" : k)); }).join(",");
-      var rows = sortList(cds, "all").map(function (c) {
+      var rows = sortList(exportList, "all").map(function (c) {
         return [
           c.title,
           collectionQuantity(c),
@@ -7779,9 +7793,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function readChecked() { return formFav.ids.filter(function (id) { return !!findAlbum(id); }); }
 
-  var cdFormBaseline = null;
+  var cdFormBaseline = null, formMusicOnly = false;
   $("mediumName").addEventListener("input", function () { updateMediaEditor(); captureDiscEntry(); renderDiscButtons(); });
-  $("medium").addEventListener("change", function () { if (discEditorBusy()) return; if (CdDrive) CdDrive.reset(); resetLookup(); updateMediaEditor(); captureDiscEntry(); renderDiscButtons(); });
+  $("medium").addEventListener("change", function () { if (discEditorBusy()) return; if (CdDrive) CdDrive.reset(); updateMediaEditor(); captureDiscEntry(); renderDiscButtons(); });
   var DISC_INPUTS = ["title", "composer", "label", "issuer", "recordingYear", "releaseYear", "notes"].concat(DETAIL_FIELDS);
   function activeDiscEntry() {
     return discSession && discSession.entries.find(function (entry) { return entry.id === discSession.active; });
@@ -7990,6 +8004,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   });
   function readSetDraft() {
     $("set-err").textContent = "";
+    if (formMusicOnly) return null;
     if (!$("set-choice").value) return null;
     var disc = formDiscNumber, total = +$("set-total").value, title = $("title").value.trim();
     var error = !title || !Number.isInteger(disc) || !Number.isInteger(total) || disc < 1 || disc > total || total > 999 ? t("setErr") : "";
@@ -8067,17 +8082,33 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (roles) setPerformerRolesOpen(roles, true);
     input.focus();
   }
+  $("form-audio-set").querySelector("summary").addEventListener("click", function (event) {
+    if (formMusicOnly) event.preventDefault();
+  });
   function applyMode() {
+    var form = $("cd-form"), audio = $("form-audio-set"), summary = audio.querySelector("summary");
+    ["medium-fields", "set-fields", "more-details", "albums-set"].forEach(function (id) { $(id).hidden = formMusicOnly; });
+    if (formMusicOnly) {
+      if (form.firstElementChild !== audio) form.prepend(audio);
+      audio.open = true;
+      summary.tabIndex = -1;
+      summary.setAttribute("aria-disabled", "true");
+    } else {
+      if (audio.nextElementSibling !== $("cardshow-set")) form.insertBefore(audio, $("cardshow-set"));
+      summary.removeAttribute("tabindex");
+      summary.removeAttribute("aria-disabled");
+    }
     var editing = !!editingId || !!(discSession && discSession.entries.some(function (e) { return e.existing; }));
-    $("add-h").textContent = editing ? t("edit") : formSetId ? t("newSet") : addReleaseText();
-    if (!$("submit").disabled) $("submit").textContent = discSession && discSession.entries.filter(function (e) { return e.include; }).length > 1 ? t("saveDiscs") : editing ? t("saveChanges") : t("addToCollection");
+    $("add-h").textContent = formMusicOnly ? t(editing ? "musicEdit" : "plAddMusic") : editing ? t("edit") : formSetId ? t("newSet") : addReleaseText();
+    if (!$("submit").disabled) $("submit").textContent = discSession && discSession.entries.filter(function (e) { return e.include; }).length > 1 ? t("saveDiscs") : editing || formMusicOnly ? t("saveChanges") : t("addToCollection");
     $("cancel-edit").hidden = !editing;
     updateMediaEditor();
     renderFormAudio();
     renderDiscButtons();
     showPhoto();
   }
-  function clearForm() {
+  function clearForm(musicOnly) {
+    formMusicOnly = musicOnly === true;
     $("collection-quantity").value = "1"; $("quantity-error").textContent="";
     $("form-save-error").hidden = true;
     if (CdDrive) CdDrive.reset();
@@ -8085,7 +8116,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     discardFormAudio();
     formSides = []; activeVinylSide = "a"; sideRenameOpen = ""; itemEditorOpen = "";
     $("cd-form").reset();
-    $("medium").value = defaultMediumForView();
+    $("medium").value = formMusicOnly ? "cd" : defaultMediumForView();
     dupWarned = "";
     $("dup-warn").hidden = true;
     photoData = null;
@@ -8110,10 +8141,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     applyMode();
     rememberCdForm();
   }
-  function openAdd() {
+  function openAdd(musicOnly) {
+    if (musicOnly) clearForm(true);
     fillMetadataSuggestions();
-    if (!editingId && !discSession) $("medium").value = defaultMediumForView();
-    $("drive-section").hidden = !IS_TAURI || $("medium").value !== "cd";
+    if (!formMusicOnly && !editingId && !discSession) $("medium").value = defaultMediumForView();
     if (!editingId) {
       var prev = readChecked();
       if (currentAlbum !== "all" && prev.indexOf(currentAlbum) === -1 && findAlbum(currentAlbum)) prev.push(currentAlbum);
@@ -8129,7 +8160,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function startEdit(cd) {
     fillMetadataSuggestions();
-    clearForm();
+    clearForm(isMusicOnly(cd));
     $("collection-quantity").value = collectionQuantity(cd);
     loadDiscEditor(cd, false, true);
     initDiscSession(cd, true);
@@ -8152,7 +8183,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("more-details").open = ["label", "issuer", "recordingYear", "releaseYear", "year", "notes"].concat(DETAIL_FIELDS.filter(function (f) { return f !== "medium"; }))
       .some(function (f) { return !!cd[f]; });
     $("notes").value = cd.notes || "";
-    $("albumOverall").open = true; $("form-audio-set").open = false;
+    if (formMusicOnly) $("medium").value = "cd";
+    $("albumOverall").open = true; $("form-audio-set").open = formMusicOnly;
     resetWorks(cd.works, cd.sides);
     updateMediaEditor();
     var coverSource = releaseSet(cd) ? setCoverSource(setSource(cd.set.id) || cd) : cd;
@@ -8471,9 +8503,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
        catalogue number without its last part, since matrices often add a suffix like "01". */
     search: async function (q) {
       var raw = q.trim(), compact = raw.replace(/[\s.\-]/g, "");
-      var chosen = typeof document !== "undefined" && document.getElementById("medium") ? document.getElementById("medium").value : "cd";
-      var names = {cd:"CD",vinyl:"Vinyl",cassette:"Cassette",sacd:"SACD",dvd:"DVD",bluray:"Blu-ray",usb:"Memory Stick",sd:"Memory Stick"};
-      var base = { type: "release", per_page: 20 }; if (names[chosen]) base.format = names[chosen];
+      var base = { type: "release", per_page: 20 };
       function find(extra) { return dgGet("database/search", Object.assign({}, base, extra)).then(function (j) { return j.results || []; }); }
       /* Discogs matches loosely, so keep only releases whose own numbers really are the one typed. */
       function catnoIs(x, key) {
@@ -8706,7 +8736,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       var inputs = qsa(sel).filter(function (i) { return i.type !== "checkbox" && !!i.value.trim(); });
       return inputs.every(function (i) { return i.classList.contains("filled"); });
     }
-    if (p.medium) { put("medium", mediumGroup(p)); put("mediumName", p.mediumName || (mediumGroup(p) === "other" && p.medium !== "other" ? mediumText(p) : "")); updateMediaEditor(); }
+    if (!formMusicOnly && p.medium) { put("medium", mediumGroup(p)); put("mediumName", p.mediumName || (mediumGroup(p) === "other" && p.medium !== "other" ? mediumText(p) : "")); updateMediaEditor(); }
     put("title", p.title);
     put("composer", p.composer);
     if (p.performers && p.performers.length) {
@@ -8727,13 +8757,15 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     } else if (onlyFilled("#work-list input")) {
       resetWorks(undefined, sides);
     }
-    var before = n;
-    ["label", "issuer", "catalogNo", "matrixRunout", "manufacturer", "madeIn", "recordingVenue", "barcode", "ifpiMastering", "ifpiMould"].forEach(function (f) { put(f, p[f]); });
-    put("recordingYear", p.recordingYear || "");
-    put("releaseYear", p.releaseYear || "");
-    put("spars", p.spars || "");
+    if (!formMusicOnly) {
+      var before = n;
+      ["label", "issuer", "catalogNo", "matrixRunout", "manufacturer", "madeIn", "recordingVenue", "barcode", "ifpiMastering", "ifpiMould"].forEach(function (f) { put(f, p[f]); });
+      put("recordingYear", p.recordingYear || "");
+      put("releaseYear", p.releaseYear || "");
+      put("spars", p.spars || "");
+      if (n > before) $("more-details").open = true;
+    }
     put("type", p.type ? workTypeText(p.type) : "");
-    if (n > before) $("more-details").open = true;
     return n;
   }
   $("cd-form").addEventListener("input", function (e) { e.target.classList.remove("filled"); });
@@ -8792,6 +8824,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function populateLookupDrafts(release) {
     ensureDiscSession(); captureDiscEntry();
     var first = activeDiscEntry(), wanted = first.id, favorites = readChecked(), n = 0;
+    if (formMusicOnly) {
+      var album = release.lookupDiscs ? { works: [].concat.apply([], release.lookupDiscs.map(function (disc) { return disc.works; })) } : release;
+      n = fillFromLookup(lookupDiscData(release, album));
+      captureDiscEntry(); renderFormAudio(); return n;
+    }
     if (!release.lookupDiscs || release.lookupDiscs.length < 2) {
       discSession.entries.forEach(function (e) { if (e.lookupDisc && !e.existing && e.id !== wanted) e.include = false; });
       if (discSession.lookupSet && !setSource(formSetId)) {
@@ -8800,7 +8837,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       }
       first.include = true; first.lookupDisc = 0;
       n = fillFromLookup(lookupDiscData(release, release));
-      captureDiscEntry(); renderDiscButtons(); return n;
+      captureDiscEntry(); renderFormAudio(); renderDiscButtons(); return n;
     }
     if (!formSetId) {
       $("set-choice").value = "+new"; $("set-choice").dispatchEvent(new Event("change"));
@@ -8829,7 +8866,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     renderLookupDiscPreview(); return n;
   }
   function configureLookupDiscs(p) {
-    lookupDiscRelease = p.lookupDiscs && p.lookupDiscs.length > 1 ? p : null;
+    lookupDiscRelease = !formMusicOnly && p.lookupDiscs && p.lookupDiscs.length > 1 ? p : null;
     $("lookup-disc-row").hidden = !lookupDiscRelease;
     $("lookup-disc").textContent = "";
     $("lookup-multiple").checked = false;
@@ -9171,7 +9208,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     add.addEventListener("click", function () { addFormAudio("files"); }); actions.appendChild(add);
     var folder = el("button", "linkbtn", t("audioAddFolder")); folder.type = "button"; folder.id = "form-audio-folder";
     folder.disabled = draft.busy || draft.saving; folder.addEventListener("click", function () { addFormAudio("folder"); }); actions.appendChild(folder); box.appendChild(actions);
-    box.appendChild(el("p", "hint", t("audioFolderHint")));
     renderDiscButtons();
   }
   async function commitFormAudio(draft) {
@@ -10050,7 +10086,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var keep = ul.contains(document.activeElement) ? document.activeElement.id : "";
     ul.textContent = "";
     var q = addMusic.q.trim().toLowerCase();
-    var list = sortList(musicCds().filter(function (c) { return !q || matches(c, q); }), "music");
+    var list = sortList(musicCds().filter(function (c) { return hasLocalAudio(c) && (!q || matches(c, q)); }), "music");
     if (!list.length) ul.appendChild(el("li", "msg", q ? t("noMatch", { q: addMusic.q.trim() }) : t("musicEmpty")));
     function addButton(id, items, title) {
       var all = items.length > 0 && items.every(function (x) { return inPlaylist(pl, x); });
@@ -10517,7 +10553,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (music && setLinkOpen) {
       var links = el("section", "psect"), list = el("div", "set-link-list");
       links.appendChild(el("h3", null, t("linkDiscs")));
-      var unlinked = cds.filter(function (c) { return !releaseSet(c); });
+      var unlinked = physicalCds().filter(function (c) { return !releaseSet(c); });
       if (!unlinked.length) links.appendChild(el("p", "hint", t("noUnlinked")));
       unlinked.forEach(function (c) {
         var label = el("label"), input = el("input"); input.type = "checkbox"; input.value = c.id;
@@ -10595,7 +10631,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     h.id = "detail-h";
     main.appendChild(h);
     main.appendChild(el("span", "chip medium-badge", mediumText(cd)));
-    main.appendChild(el("p", "hint", t("collectionQuantity")+": "+collectionQuantity(cd)));
+    if (!isMusicOnly(cd)) main.appendChild(el("p", "hint", t("collectionQuantity")+": "+collectionQuantity(cd)));
     if (releaseSet(cd)) main.appendChild(setButton("albumOpen", "disc-album-open", function () { openDetail(cd.id); }, true));
     /* Composer, performer and label names show every CD with that name when clicked. */
     var comps = cd.composer ? [cd.composer] : [];
@@ -10618,7 +10654,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (cd.type) fact(t("profileForm"), workTypeText(cd.type));
     appendPerformerFacts(dl, cd.performers);
 
-    var pk = favPicker(detailFav, "detail-fav",
+    var pk = isMusicOnly(cd) ? null : favPicker(detailFav, "detail-fav",
       function (id) { var a = findAlbum(id); return !!a && a.cdIds.indexOf(cd.id) !== -1; },
       async function (a, on) {
         var saved = await commitMeta(function (m) {
@@ -10634,7 +10670,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         detailFav.open = true;
         if (await commitMeta(function (m) { m.albums.push({ id: newFavoriteId(), name: name, cdIds: [cd.id] }); })) toast(t("toastAlbumCreated", { name: name }));
       });
-    if (pk.chips.length) {
+    if (pk && pk.chips.length) {
       dl.appendChild(el("dt", null, t("albumsField")));
       var dd = el("dd", "tags");
       pk.chips.forEach(function (c) { dd.appendChild(c); });
@@ -10645,7 +10681,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     /* Works and their tracks, numbered across the disc */
     if (cd.works && cd.works.length) {
       var prog = setDiscProgram(cd, true);
-      prog.insertBefore(el("h3", null, t("works")), prog.firstChild);
+      prog.insertBefore(el("h3", null, t(isMusicOnly(cd) ? "musicWorks" : "works")), prog.firstChild);
       main.appendChild(prog);
     }
 
@@ -10670,7 +10706,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       }
       spec.appendChild(el("dd", pair[0] === "notes" ? "pnotes" : null, pair[1]));
     });
-    if (spec.children.length) {
+    if (!isMusicOnly(cd) && spec.children.length) {
       var specBox = el("section", "psect");
       specBox.appendChild(el("h3", null, mediumSection(cd, true)));
       specBox.appendChild(spec);
@@ -10698,7 +10734,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       actions.appendChild(yes);
       actions.appendChild(no);
     } else {
-      var ed = el("button", "btn small", t("editBtn"));
+      var ed = el("button", "btn small", t(isMusicOnly(cd) ? "musicEdit" : "editBtn"));
       ed.type = "button";
       ed.addEventListener("click", function () { var c = cd; closeWin("detail"); startEdit(c); });
       var rm = el("button", "btn small quiet", t("deleteBtn"));
@@ -10707,8 +10743,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       rm.addEventListener("click", function () { detailConfirm = true; renderDetail(); });
       actions.appendChild(ed);
       actions.appendChild(rm);
-      actions.appendChild(pk.btn);
-      actions.appendChild(pk.list);
+      if (pk) { actions.appendChild(pk.btn); actions.appendChild(pk.list); }
     }
     main.appendChild(actions);
 
@@ -10729,7 +10764,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   $("close-detail").addEventListener("click", function () { closeWin("detail"); });
   $("open-add").addEventListener("click", function () {
     var pl = currentPlaylistId() && findPlaylist(currentPlaylistId());
-    if (pl) openAddMusic(pl.id); else openAdd();
+    if (pl) openAddMusic(pl.id); else openAdd(currentAlbum === "music");
   });
 
   /* Another CD with the same barcode (digits only) or catalogue number (ignoring spaces, dashes
@@ -10777,32 +10812,39 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
     var before = editingId && cdById(editingId);
     var cd = Object.assign({}, before || {});
-    ["works", "notes", "cardFields", "photo", "photoFile"].concat(DETAIL_FIELDS).forEach(function (f) { delete cd[f]; });
-    if (before && releaseYear !== String(before.releaseYear || before.year || "")) delete cd.year;
+    ["works", "cardFields", "photo", "photoFile"].forEach(function (f) { delete cd[f]; });
     Object.assign(cd, {
       title: title,
       composer: $("composer").value.trim(),
       performers: readPerformers(),
-      label: $("label").value.trim(),
-      issuer: $("issuer").value.trim(),
-      recordingYear: recordingYear,
-      releaseYear: releaseYear,
       addedAt: editingId ? editingAddedAt : Date.now()
     });
     if (works.length) cd.works = works;
-    if ($("medium").value === "vinyl") cd.sides = clone(formSides);
-    DETAIL_FIELDS.forEach(function (f) { var v = $(f).value.trim(); if (v) cd[f] = v; });
-    if (before && mediumGroup(before) === "other" && mediumOf(before) !== "other" && cd.medium === "other" && cd.mediumName === mediumText(before)) {
-      cd.medium = before.medium;
-      if (!before.mediumName) delete cd.mediumName;
+    if (formMusicOnly) {
+      cd.musicOnly = true;
+      var type = $("type").value.trim();
+      if (type) cd.type = type; else delete cd.type;
+    } else {
+      ["notes"].concat(DETAIL_FIELDS).forEach(function (f) { delete cd[f]; });
+      if (before && releaseYear !== String(before.releaseYear || before.year || "")) delete cd.year;
+      cd.label = $("label").value.trim();
+      cd.issuer = $("issuer").value.trim();
+      cd.recordingYear = recordingYear;
+      cd.releaseYear = releaseYear;
+      if ($("medium").value === "vinyl") cd.sides = clone(formSides);
+      DETAIL_FIELDS.forEach(function (f) { var v = $(f).value.trim(); if (v) cd[f] = v; });
+      if (before && mediumGroup(before) === "other" && mediumOf(before) !== "other" && cd.medium === "other" && cd.mediumName === mediumText(before)) {
+        cd.medium = before.medium;
+        if (!before.mediumName) delete cd.mediumName;
+      }
+      if (cd.hub) cd.hub = normalizeHub(cd.hub);
+      var notes = $("notes").value.trim();
+      if (notes) cd.notes = notes;
     }
     if (cd.type) cd.type = normalizeWorkType(cd.type);
-    if (cd.hub) cd.hub = normalizeHub(cd.hub);
-    var notes = $("notes").value.trim();
-    if (notes) cd.notes = notes;
     /* Adding a disc whose barcode or catalogue number is already in the collection: say which CD
        has it, and add it only when the button is pressed again. */
-    var twin = editingId ? null : sameDisc(cd);
+    var twin = editingId || formMusicOnly ? null : sameDisc(cd);
     var twinKey = twin ? [twin.id, cd.barcode, cd.catalogNo].join("|") : "";
     var entry = activeDiscEntry();
     if (twin && (entry ? entry.dupWarned : dupWarned) !== twinKey) {
@@ -10822,7 +10864,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     /* An untouched cover that is already a file stays that file (no need to write it again). */
     if (editCover.file && !editCover.touched && (!cover || !coverCrop.changed)) cd.photoFile = editCover.file;
     else if (cover) cd.photo = cover;
-    var chosenAlbums = readChecked();
+    var chosenAlbums = formMusicOnly ? [] : readChecked();
 
     var wasEditing = !!editingId;
     var targetId = editingId || (entry && entry.id) || (audioDraft && audioDraft.id) || newDiscDraftId();
@@ -10835,7 +10877,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   $("cd-form").addEventListener("submit", async function (e) {
     e.preventDefault();
     var quantity=Number($("collection-quantity").value);
-    if (!Number.isInteger(quantity)||quantity<1||quantity>9999) {$("quantity-error").textContent=t("quantityError");$("collection-quantity").focus();return;}
+    if (!formMusicOnly && (!Number.isInteger(quantity)||quantity<1||quantity>9999)) {$("quantity-error").textContent=t("quantityError");$("collection-quantity").focus();return;}
     $("quantity-error").textContent="";
     finishPerformerDrag(false);
     if ($("submit").disabled || discEditorBusy()) return;
@@ -10857,7 +10899,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var merged = Object.assign({}, secondary, primary), changes = Object.keys(merged).map(function (id) { return merged[id]; });
     var removed = discSession.entries.filter(function (entry) { return entry.existing && entry.remove; }).map(function (entry) { return cdById(entry.id); }).filter(Boolean).map(clone);
     if(formSetId) setMembers(formSetId).forEach(function(cd){if(collectionQuantity(cd)!==quantity&&!changes.some(function(c){return c.id===cd.id;})&&!discSession.entries.some(function(e){return e.id===cd.id&&e.remove;}))changes.push(clone(cd));});
-    changes.forEach(function(cd){if(quantity!==1||Object.prototype.hasOwnProperty.call(cd,"quantity"))cd.quantity=quantity;});
+    if (!formMusicOnly) changes.forEach(function(cd){if(quantity!==1||Object.prototype.hasOwnProperty.call(cd,"quantity"))cd.quantity=quantity;});
     var removedIds = removed.map(function (cd) { return cd.id; }), beforeMeta = clone(meta);
     if (formSetId) {
       var byId = {};

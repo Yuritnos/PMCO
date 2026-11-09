@@ -286,16 +286,21 @@ async function main() {
       await page.route('https://api.discogs.com/database/search?**',route=>{
         const query=new URL(route.request().url()).searchParams;
         assert.equal(query.get('barcode'),'9787884181865');
-        assert.equal(query.get('format'),'Vinyl');
+        assert.equal(query.has('format'),false);
+        assert.equal(query.has('title'),false);
         return route.fulfill({json:{results:[{id:release.id,title:release.title,barcode:['9 787884 181865'],format:['Vinyl']}]}});
       });
       await page.route('https://api.discogs.com/releases/'+release.id,route=>route.fulfill({json:release}));
       await page.locator('#open-add').click();
-      await page.locator('#medium').selectOption('vinyl');
+      await page.locator('#medium').selectOption('cd');
+      await page.locator('#title').fill('Unrelated draft title');
       await page.locator('#lookup-q').fill('9787884181865');
       await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').waitFor();
+      await page.locator('#medium').selectOption('cassette');
       await page.locator('#lookup-use-0').click();
       await page.waitForFunction(title=>document.getElementById('title').value===title,release.title);
+      assert.equal(await page.locator('#medium').inputValue(),'vinyl');
       assert.equal(await page.locator('#work-list .w-title').inputValue(),'灯华梦踏');
       assert.equal(await page.locator('#work-list .trow').count(),0);
       assert(await page.locator('#work-list .w-duration').isVisible());
@@ -310,6 +315,79 @@ async function main() {
       await page.reload();
       await page.evaluate(cd=>mediaQA.startEdit(cd),saved);
       assert.deepEqual(await page.locator('#vinyl-sides button[data-side]').allTextContents(),['Side A']);
+      await page.locator('#vinyl-add-side').click();
+      assert.equal(await page.locator('#vinyl-sides button[data-side=b]').getAttribute('aria-pressed'),'true');
+      const work=page.locator('.work:visible .w-title');
+      assert.equal(await work.count(),1);
+      assert.equal(await work.inputValue(),'');
+      assert(await work.evaluate(input=>document.activeElement===input));
+      assert.equal(await page.locator('.work:visible .trow').count(),0);
+    } finally {await f.close();}
+  });
+  await test('All music saves and playlists audio-only albums outside the physical collection',async()=>{
+    const f=await fixture({native:true}),{page,state}=f;
+    const release={id:7311,title:'Unowned album',formats:[{name:'CD',qty:'2'}],tracklist:[
+      {type_:'track',position:'1-1',title:'Morning song'},{type_:'track',position:'2-1',title:'Evening song'}
+    ]};
+    try {
+      await page.route('https://api.discogs.com/database/search?**',route=>route.fulfill({json:{results:[{id:release.id,title:release.title,barcode:['123456789012']}]}}));
+      await page.route('https://api.discogs.com/releases/'+release.id,route=>route.fulfill({json:release}));
+      const physicalCount=await page.locator('#chip-all .n').textContent();
+      await page.locator('#chip-music').click();
+      const add=page.locator('#open-add');
+      assert.equal(await add.locator('#fab-text').textContent(),'Add music');
+      await add.click();
+      const audio=page.locator('#form-audio-set');
+      assert(await audio.evaluate(n=>n.open&&n.parentElement.firstElementChild===n));
+      assert(await page.locator('#form-audio-add').evaluate(n=>document.activeElement===n));
+      await audio.locator('summary').click();
+      assert(await audio.evaluate(n=>n.open));
+      for(const id of ['medium','collection-quantity','more-details','drive-section','photo-hint'])
+        assert(await page.locator('#'+id).isHidden(),id);
+      assert.equal(await page.locator('#set-storage,#set-stats,[data-i18n=lookupNote]').count(),0);
+      assert(!/Choose a folder on this computer/.test(await audio.textContent()));
+      assert.equal(await page.locator('#albumOverall summary > span').first().textContent(),'Album information');
+      assert.equal(await page.locator('#works-set summary > span').first().textContent(),'Works on this album');
+      await page.locator('#lookup-q').fill('123456789012');
+      await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').click();
+      await page.waitForFunction(title=>document.getElementById('title').value===title,release.title);
+      assert(await page.locator('#lookup-disc-row').isHidden());
+      await page.locator('#form-audio-folder').click();
+      await audio.locator('.audio-draft li').nth(2).waitFor();
+      await save(page);
+      const saved=state.doc.cds.find(cd=>cd.title===release.title);
+      assert.equal(saved.musicOnly,true);
+      for(const field of ['medium','quantity','set','barcode']) assert(!Object.hasOwn(saved,field),field);
+      assert.deepEqual(saved.works.map(work=>work.title),['Morning song','Evening song']);
+      assert.equal(saved.audio.length,3);
+      assert.equal(await page.locator('#chip-all .n').textContent(),physicalCount);
+      await page.reload();
+      await page.locator('#chip-music').click();
+      await page.locator('#card-info-'+saved.id).click();
+      assert.equal(await page.locator('#win-detail .medium-badge').textContent(),'Audio files');
+      assert(!/Collection quantity/.test(await page.locator('#win-detail .profile-main').textContent()));
+      await page.getByRole('button',{name:'Edit music',exact:true}).click();
+      assert(await audio.evaluate(n=>n.open&&n.parentElement.firstElementChild===n));
+      await page.locator('#title').fill('Renamed album');
+      await save(page);
+      const edited=state.doc.cds.find(cd=>cd.id===saved.id);
+      assert.equal(edited.title,'Renamed album');
+      assert.equal(edited.musicOnly,true);
+      assert.deepEqual(edited.audio,saved.audio);
+      await page.locator('#card-addpl-'+saved.id).click();
+      await page.locator('#cardpl-new').click();
+      await page.locator('#album-name').fill('Audio-only picks');
+      await page.locator('#album-save').click();
+      await page.waitForFunction(()=>document.getElementById('win-album').hidden);
+      assert.deepEqual(state.doc.meta.playlists[0].items.map(i=>i.file).sort(),saved.audio.map(a=>a.file).sort());
+      await page.locator('#chip-all').click();
+      assert.equal(await page.locator('#card-'+saved.id).count(),0);
+      await add.click();
+      for(const id of ['medium','collection-quantity','more-details'])
+        assert(await page.locator('#'+id).isVisible(),id);
+      assert(await page.locator('#drive-section').evaluate(n=>!n.hidden));
+      assert(await audio.evaluate(n=>!n.open&&n.nextElementSibling.id==='cardshow-set'));
     } finally {await f.close();}
   });
   await test('vinyl lookup keeps documented sides for each disc in a set',async()=>{

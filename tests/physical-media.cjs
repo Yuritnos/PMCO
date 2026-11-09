@@ -277,7 +277,7 @@ async function main() {
       assert.deepEqual(imported[2].works.flatMap(w=>w.tracks.map(t=>t.position)),['A1','B1']);
     } finally { await f.close(); }
   });
-  await test('lookup searches use the chosen medium and Other searches remain unrestricted',async()=>{
+  await test('lookup searches remain unrestricted across medium choices',async()=>{
     const f=await fixture(),{page}=f;
     try {
       const searches=[];
@@ -287,7 +287,7 @@ async function main() {
         await page.locator('#medium').selectOption(medium);
         await page.evaluate(()=>mediaQA.discogsSource.search('1234567890123'));
       }
-      assert.deepEqual(searches,['Vinyl','Cassette','SACD',null]);
+      assert.deepEqual(searches,[null,null,null,null]);
     } finally { await f.close(); }
   });
   await test('cassette, SACD, USB and unknown format details survive explicit edits',async()=>{

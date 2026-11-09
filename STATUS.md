@@ -2,7 +2,14 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 54 published (2026-11-09)
+## Current milestone: All music imports and independent lookup (2026-11-09)
+
+- All music now offers **Add music** for audio-only albums. Audio stays open at the top of the editor, followed by album information and works. The editor omits physical quantity, format, details and drive controls. Music-only records reuse the local audio and playlist paths and are excluded from physical shelves and Statistics.
+- Removed the marked account summary, auto-fill, folder import and empty cover notes. Manually adding a vinyl side starts one blank work.
+- Discogs lookup uses the explicit search value independently of the form title or medium. Barcode **9787884181865** finds the vinyl edition with CD selected, and switching medium retains the search result.
+- Focused checks cover barcode lookup and manual Side B, music-only import/save/reopen/edit/playlist and physical count isolation, plus removed notes. Windows **0.3.1** build pending.
+
+## Previous milestone: PMCO 0.3.1 build 54 published (2026-11-09)
 
 - Discogs release **20011237** for barcode **9787884181865** lists **灯华梦踏** once at position **A**, with a blank duration and a **Single Sided** format description. PMCO previously excluded position-bearing tracks from its duplicate-title collapse, and the editor added the default reverse side. The screenshot’s **13:17** was the input placeholder.
 - Vinyl lookup now folds a matching sole track into its work while retaining the printed position, duration and one audio slot. An explicitly single-sided release or a listing with all positions on its first side omits the empty reverse tab. Per-item side data stays separate in sets. Unknown sides keep the editable defaults.
