@@ -35,6 +35,28 @@ async function main() {
   await test('all inline scripts parse', () => {
     for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
   });
+  await test('matrix identifiers stay with their explicitly labelled items in mixed sets', async () => {
+    const matrix = (value, description) => ({type:'Matrix / Runout', value, description});
+    const out = await lookup({
+      formats:[{name:'Vinyl',qty:'1'},{name:'CD',qty:'2'}],
+      labels:[{name:'Fixture label',catno:'SET-101'}],
+      identifiers:[
+        matrix('CD-200 01 #','CD1'),
+        matrix('LP-100 B','LP 1, side B'),
+        matrix('CD-200 02 #','Disc 2 (CD 1), variant 2'),
+        matrix('CD-200 01 #','CD 1, variant 1'),
+        matrix('UNSCOPED-1','Variant 1'),
+        matrix('AMBIGUOUS-1','CD1 & 2'),
+        matrix('AMBIGUOUS-2','CD 1 / CD 2'),
+        matrix('OUT-OF-RANGE','CD 3')
+      ]
+    }, 'CD-200 01');
+    assert.equal(out.catalogNo,'SET-101');
+    assert.equal(out.matrixRunout,'CD-200 01');
+    assert.deepEqual(out.lookupDiscs.map(d=>d.matrixRunout),['LP-100 B','CD-200 01 #; CD-200 02 #',undefined]);
+    const single = await lookup({identifiers:[matrix('SIDE A','Side A'),matrix('SIDE B','Side B')]}, '123456789012');
+    assert.equal(single.matrixRunout,'SIDE A; SIDE B');
+  });
   await test('410 083-2 lettered sections form one timed work and five physical audio slots', async () => {
     const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/discogs-2332538.json'), 'utf8').replace(/^\uFEFF/, ''));
     const out = await lookup(fixture, '410 083-2');

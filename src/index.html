@@ -779,7 +779,13 @@ li.drop-after { box-shadow: inset 0 -3px 0 var(--accent); }
   font-size: 23px;
   line-height: 1.2;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
+.quantity-badge { align-self: flex-end; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.card .quantity-badge { margin-top: auto; }
 .composer { margin: -4px 0 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 18px; color: var(--muted); overflow-wrap: anywhere; }
 :root:lang(ja) .composer, :root:lang(zh) .composer { font-style: normal; font-weight: 600; font-size: 16px; }
 .grid .card-body {
@@ -2954,6 +2960,13 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
 
   function collectionQuantity(cd) { var n = Number(cd && cd.quantity); return Number.isInteger(n) && n > 0 ? n : 1; }
+  function appendQuantityBadge(host, cd) {
+    var n = collectionQuantity(cd);
+    if (n < 2 || isMusicOnly(cd)) return;
+    var badge = el("span", "quantity-badge", "x" + n);
+    badge.title = t("quantityValue", { n: n });
+    host.appendChild(badge);
+  }
   function shelfMediumText(cd) { var members = cd._members || [cd]; return members.length === 1 ? (mediumView() ? "" : mediumText(members[0])) : mediumSummary(members); }
   function appendShelfBadges(host, cd) { var medium = shelfMediumText(cd); if (medium) host.appendChild(el("span", "chip medium-badge", medium));  }
   /* ---------- state ---------- */
@@ -4430,7 +4443,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       if (!s) { out.push(cd); return; }
       if (!groups[s.id]) {
         var source = setSource(s.id) || cd;
-        var g = Object.assign({}, cd, setDefaults(source), { title: source.set.title, _members: [] });
+        var g = Object.assign({}, cd, setDefaults(source), { title: source.set.title, quantity: source.quantity, _members: [] });
         g.set = Object.assign({}, source.set);
         copySetCover(g, setCoverSource(source));
         groups[s.id] = g; out.push(g);
@@ -5682,7 +5695,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       cover.appendChild(d);
     }
     var body = el("div", "card-body");
-    body.appendChild(el("h3", null, cd.title));
+    var title = el("h3", null, cd.title);
+    title.title = cd.title;
+    body.appendChild(title);
     appendShelfBadges(body, cd);
     var picked = {};
     fieldsFor(cd).forEach(function (f) { picked[f] = true; });
@@ -5751,6 +5766,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     }
 
     art.appendChild(cover);
+    appendQuantityBadge(body, cd);
     art.appendChild(body);
     return art;
   }
@@ -8496,6 +8512,17 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     });
     return groups;
   }
+  function dgMatrixDisc(description, discs) {
+    var kinds = { cd: "cd", sacd: "sacd", dvd: "dvd", bd: "bluray", bluray: "bluray", lp: "vinyl", vinyl: "vinyl", cassette: "cassette" };
+    var tags = String(description || "").matchAll(/\b(CD|SACD|DVD|BD|Blu[ -]?ray|LP|Vinyl|Cassette|Disc|Disk)\s*(?:[#:]\s*)?(\d+)\b(?!\s*(?:[-–—/&+,]|\band\b|\bor\b|\bto\b)\s*\d)/gi);
+    var matches = new Set();
+    for (var tag of tags) {
+      var medium = kinds[tag[1].toLowerCase().replace(/[ -]/g, "")], index = +tag[2] - 1;
+      var items = medium ? discs.filter(function (disc) { return disc.medium === medium; }) : discs;
+      matches.add(items[index]);
+    }
+    if (matches.size === 1) return matches.values().next().value;
+  }
   var discogsSource = {
     name: "Discogs",
     /* Barcodes search the barcode field. Other text is tried as a catalogue number, then against the
@@ -8598,10 +8625,21 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         out.label = dgClean(lab.name);
         if (lab.catno && !/^none$/i.test(lab.catno)) out.catalogNo = out.releaseCatno = lab.catno;
       }
-      var matrices = (d.identifiers || []).filter(function (i) { return /matrix|runout/i.test(i.type || ""); }).map(function (i) { return String(i.value || "").trim(); }).filter(Boolean);
-      if (matrices.length) out.matrixRunout = Array.from(new Set(matrices)).join("; ");
+      var matrices = (d.identifiers || []).filter(function (i) { return /matrix|runout/i.test(i.type || "") && String(i.value || "").trim(); });
+      var matrixValues = matrices.map(function (i) { return String(i.value).trim(); });
+      if (out.lookupDiscs) {
+        // Unscoped matrices on sets may represent sides, alternate pressings, or different discs.
+        var byDisc = new Map();
+        matrices.forEach(function (matrix) {
+          var disc = dgMatrixDisc(matrix.description, out.lookupDiscs);
+          if (!disc) return;
+          if (!byDisc.has(disc)) byDisc.set(disc, new Set());
+          byDisc.get(disc).add(String(matrix.value).trim());
+        });
+        byDisc.forEach(function (values, disc) { disc.matrixRunout = Array.from(values).join("; "); });
+      } else if (matrixValues.length) out.matrixRunout = Array.from(new Set(matrixValues)).join("; ");
       if (query && !/^\d{12,14}$/.test(query.replace(/[\s.\-]/g, ""))) {
-        var matrixQuery = matrices.some(function (v) { return codeKey(v) === codeKey(query) || codeKey(v).indexOf(codeKey(query)) === 0; });
+        var matrixQuery = matrixValues.some(function (v) { return codeKey(v).indexOf(codeKey(query)) === 0; });
         if (matrixQuery) out.matrixRunout = query.trim(); else out.catalogNo = query.trim();
       }
       var pic = (d.images || []).filter(function (im) { return im.type === "primary"; })[0] || (d.images || [])[0];
@@ -8814,6 +8852,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var out = Object.assign({}, release);
     delete out.lookupDiscs; delete out.lookupDisc;
     if (disc.medium) { out.medium = disc.medium; out.mediumName = disc.mediumName || ""; }
+    if (release.lookupDiscs) out.matrixRunout = disc.matrixRunout;
     out.sides = disc.sides;
     out.works = clone(disc.works || []).map(function (w) {
       var resolved = workMetadata(release, w);
@@ -10447,7 +10486,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var facts = el("dl", "facts");
     function fact(label, value) { if (value) { facts.appendChild(el("dt", null, label)); facts.appendChild(el("dd", null, String(value))); } }
     fact(t("medium"), itemLabel(cd));
-    fact(t("collectionQuantity"), collectionQuantity(cd));
     fact(t("composer"), cd.composer); fact(t("cdType"), cd.type ? workTypeText(cd.type) : "");
     groupedPerformers(cd.performers).forEach(function (p) { fact(p.roles.map(roleText).join(" / "), p.name); });
     [["label",cd.label],["issuer",cd.issuer],["recYear",cd.recordingYear],["relYear",cd.releaseYear||cd.year],
@@ -10511,8 +10549,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var main = el("div", "profile-main"), heading = el("h2", null, source.set.title); heading.id = "detail-h"; main.appendChild(heading);
     var total = setTotal(members);
     main.appendChild(el("p", "hint medium-badge", mediumSummary(members)));
-    main.appendChild(el("p", "hint", t("collectionQuantity")+": "+collectionQuantity(source)));
-    main.appendChild(el("p", "hint", t("albumProgress", { n: members.length, total: total })));
     var missing = []; for (var n = 1; n <= total; n++) if (!members.some(function (c) { return +c.set.disc === n; })) missing.push(n);
     if (missing.length) main.appendChild(el("p", "hint", t("missingDiscs", { discs: missing.join(", ") })));
     if (defaults.composer) main.appendChild(nameLink("composer", defaults.composer));
@@ -10601,6 +10637,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     actions.appendChild(setButton("deleteBtn", "set-delete-all", function () { confirmSetRemoval(actions, members, true); }, true));
     pk.chips.forEach(function (c) { actions.appendChild(c); }); actions.appendChild(pk.list);
     main.appendChild(actions);
+    appendQuantityBadge(main, source);
     box.appendChild(cover); box.appendChild(main);
     if (keep && $(keep)) $(keep).focus({ preventScroll: true });
   }
@@ -10631,7 +10668,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     h.id = "detail-h";
     main.appendChild(h);
     main.appendChild(el("span", "chip medium-badge", mediumText(cd)));
-    if (!isMusicOnly(cd)) main.appendChild(el("p", "hint", t("collectionQuantity")+": "+collectionQuantity(cd)));
     if (releaseSet(cd)) main.appendChild(setButton("albumOpen", "disc-album-open", function () { openDetail(cd.id); }, true));
     /* Composer, performer and label names show every CD with that name when clicked. */
     var comps = cd.composer ? [cd.composer] : [];
@@ -10746,6 +10782,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       if (pk) { actions.appendChild(pk.btn); actions.appendChild(pk.list); }
     }
     main.appendChild(actions);
+    appendQuantityBadge(main, cd);
 
     box.appendChild(cover);
     box.appendChild(main);

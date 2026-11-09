@@ -2,7 +2,13 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 55 delivered (2026-11-09)
+## Current milestone: Disc-specific matrices and card display (2026-11-09)
+
+- [Discogs release 10374216](https://www.discogs.com/release/10374216) for barcode **028942761124** explicitly labels **427 612-2 01 #** as **CD1** and **427 613-2 01 #** as **CD2**. PMCO previously joined those values into one field and copied it to each item. Auto-fill now uses disc-labelled identifiers and preserves distinct pressing variants within that disc. Ambiguous matrix numbers on sets require manual entry.
+- Shelf card titles are limited to three visual lines, with full text in the profile and on hover. Removed the catalogue-progress and collection-quantity notes from profiles. Quantities above one display as **xN** at the lower right of the shelf card and profile.
+- Focused lookup and browser regressions passed. Windows **0.3.1** build pending.
+
+## Previous milestone: PMCO 0.3.1 build 55 delivered (2026-11-09)
 
 - All music now offers **Add music** for audio-only albums. Audio stays open at the top of the editor, followed by album information and works. The editor omits physical quantity, format, details and drive controls. Music-only records reuse the local audio and playlist paths and are excluded from physical shelves and Statistics.
 - Removed the marked account summary, auto-fill, folder import and empty cover notes. Manually adding a vinyl side starts one blank work.

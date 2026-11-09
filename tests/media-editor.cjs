@@ -279,6 +279,59 @@ async function main() {
       assert.equal(await page.locator('#vinyl-sides button[data-side=b]').getAttribute('aria-pressed'),'true'); assert.equal(await page.locator('.work:visible .w-duration').inputValue(),'bad'); assert.equal(await page.locator('.work:visible .w-duration').evaluate(n=>n===document.activeElement),true);
     } finally {await f.close();}
   });
+  await test('barcode 028942761124 imports and saves the matrix from each Discogs disc label',async()=>{
+    const f=await fixture(),{page,state}=f;
+    const release=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/discogs-10374216.json'),'utf8').replace(/^\uFEFF/,''));
+    try {
+      await page.route('https://api.discogs.com/database/search?**',route=>route.fulfill({json:{results:[
+        {id:release.id,title:release.title,barcode:['0 28942 76112 4']}
+      ]}}));
+      await page.route('https://api.discogs.com/releases/'+release.id,route=>route.fulfill({json:release}));
+      await page.locator('#open-add').click();
+      await page.locator('#lookup-q').fill('028942761124');
+      await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').click();
+      const tabs=page.locator('#form-disc-tabs .segment-select');
+      await tabs.nth(1).waitFor();
+      assert.equal(await page.locator('#matrixRunout').inputValue(),'427 612-2 01 #');
+      await tabs.nth(1).click();
+      assert.equal(await page.locator('#matrixRunout').inputValue(),'427 613-2 01 #');
+      await save(page);
+      const discs=state.doc.cds.filter(cd=>cd.title===release.title).sort((a,b)=>a.set.disc-b.set.disc);
+      assert.deepEqual(discs.map(d=>d.matrixRunout),['427 612-2 01 #','427 613-2 01 #']);
+      assert(discs.every(d=>d.catalogNo==='427 611-2 [GH2]'));
+      await page.reload();
+      await page.evaluate(cd=>mediaQA.startEdit(cd),discs[1]);
+      assert.equal(await page.locator('#matrixRunout').inputValue(),'427 613-2 01 #');
+    } finally {await f.close();}
+  });
+  await test('card titles stop after three lines and quantity badges appear only for multiple copies',async()=>{
+    const title='Rachmaninov · Piano Concerto No. 2 / Prokofiev · Piano Concerto No. 5 (Klavierkonzerte · Concertos Pour Piano)';
+    const single={id:'copies',title,quantity:3};
+    const setCopy={id:'copies-set',title:'Two copies of a set',quantity:2,set:{id:'copies-group',title:'Two copies of a set',disc:1,total:1}};
+    const f=await fixture({extra:[single,setCopy]}),{page}=f;
+    try {
+      const heading=page.locator('#card-copies h3');
+      assert.equal(await heading.textContent(),title);
+      assert.equal(await heading.getAttribute('title'),title);
+      const layout=await heading.evaluate(node=>{
+        const {lineHeight,webkitLineClamp}=getComputedStyle(node);
+        return {clamp:webkitLineClamp,lines:Math.round(node.clientHeight/parseFloat(lineHeight)),clipped:node.scrollHeight>node.clientHeight};
+      });
+      assert.deepEqual(layout,{clamp:'3',lines:3,clipped:true});
+      assert.equal(await page.locator('#card-copies .card-body > :last-child').textContent(),'x3');
+      assert.equal(await page.locator('#card-copies-set .quantity-badge').textContent(),'x2');
+      assert.equal(await page.locator('#card-old .quantity-badge').count(),0);
+      for(const [id,quantity] of [['old',''],['copies','x3'],['copies-set','x2']]){
+        await page.locator('#card-'+id).click();
+        const profile=page.locator('#detail-body');
+        assert(!/items catalogued|Collection quantity/.test(await profile.innerText()));
+        assert.deepEqual(await profile.locator('.quantity-badge').allTextContents(),quantity?[quantity]:[]);
+        if(id==='copies') assert.equal(await profile.locator('#detail-h').textContent(),title);
+        await page.locator('#close-detail').click();
+      }
+    } finally {await f.close();}
+  });
   await test('barcode 9787884181865 imports one work, one audio slot and only Side A',async()=>{
     const f=await fixture(),{page,state}=f;
     const release=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/discogs-20011237.json'),'utf8'));
@@ -426,6 +479,7 @@ async function main() {
       const groups=await page.evaluate(()=>mediaQA.dgDiscLists([{position:'A1'},{position:'B1'},{position:'CD1'},{position:'CD2'}],[{medium:'vinyl'},{medium:'cd'}])); assert.equal(groups['1'].length,2); assert.equal(groups['2'].length,2);
       await page.locator('#open-add').click(); await page.evaluate(p=>mediaQA.populateLookupDrafts(p),result); await save(page);
       const imported=state.doc.cds.filter(c=>c.set?.title===result.title); assert.deepEqual(imported.map(c=>c.medium),['vinyl','cd']); assert.equal(imported[1].works.length,2);
+      assert(imported.every(cd=>!cd.matrixRunout));
     } finally {await f.close();}
   });
   await test('side buttons fill their row and each owns edit/delete; rename opens only on demand and cancels cleanly',async()=>{

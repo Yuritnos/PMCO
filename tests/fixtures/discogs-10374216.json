@@ -1,0 +1,69 @@
+{
+  "id": 10374216,
+  "title": "Symphonie No. 8",
+  "year": 1989,
+  "country": "Europe",
+  "formats": [
+    {
+      "name": "CD",
+      "qty": "2",
+      "descriptions": []
+    }
+  ],
+  "labels": [
+    {
+      "name": "Deutsche Grammophon",
+      "catno": "427 611-2 [GH2]"
+    }
+  ],
+  "identifiers": [
+    {
+      "type": "Barcode",
+      "value": "0 28942 76112 4"
+    },
+    {
+      "type": "Matrix / Runout",
+      "value": "427 612-2 01 #",
+      "description": "CD1"
+    },
+    {
+      "type": "Matrix / Runout",
+      "value": "427 613-2 01 # ",
+      "description": "CD2"
+    }
+  ],
+  "tracklist": [
+    {
+      "position": "",
+      "type_": "index",
+      "title": "Symphonie Nr. 8 C-Moll - Symphony No. 8 In C Minor (Fassung/Version: 1890; Edition: Robert Haas)",
+      "duration": "",
+      "sub_tracks": [
+        {
+          "position": "1-1",
+          "type_": "track",
+          "title": "1. Allegro Moderato",
+          "duration": "16:56"
+        },
+        {
+          "position": "1-2",
+          "type_": "track",
+          "title": "2. Scherzo. Allegro Moderato - Trio. Langsam",
+          "duration": "16:25"
+        },
+        {
+          "position": "2-1",
+          "type_": "track",
+          "title": "3. Adagio. Feierlich Langsam, Doch Nicht Schleppend",
+          "duration": "25:13"
+        },
+        {
+          "position": "2-2",
+          "type_": "track",
+          "title": "4. Finale. Feierlich, Nicht Schnell",
+          "duration": "23:59"
+        }
+      ]
+    }
+  ]
+}
