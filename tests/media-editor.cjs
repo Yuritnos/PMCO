@@ -332,6 +332,40 @@ async function main() {
       }
     } finally {await f.close();}
   });
+  await test('barcode 9787884182404 keeps every vinyl and CD track as an independent work',async()=>{
+    const f=await fixture(),{page,state}=f;
+    const release=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/discogs-37843299.json'),'utf8'));
+    const tracks=release.tracklist.filter(track=>track.type_==='track');
+    try {
+      await page.route('https://api.discogs.com/database/search?**',route=>route.fulfill({json:{results:[
+        {id:release.id,title:release.title,barcode:['9787884182404']}
+      ]}}));
+      await page.route('https://api.discogs.com/releases/'+release.id,route=>route.fulfill({json:release}));
+      await page.locator('#open-add').click();
+      await page.locator('#lookup-q').fill('9787884182404');
+      await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').click();
+      const tabs=page.locator('#form-disc-tabs .segment-select');
+      await tabs.nth(1).waitFor();
+      const workTitles=page.locator('#work-list .work:visible .w-title');
+      assert.equal(await workTitles.count(),10);
+      await page.locator('#vinyl-sides button[data-side=b]').click();
+      assert.equal(await workTitles.count(),11);
+      await tabs.nth(1).click();
+      assert.equal(await workTitles.count(),21);
+      assert.equal(await page.locator('#work-list .trow').count(),0);
+      await save(page);
+      const discs=state.doc.cds.filter(cd=>cd.set?.total===2&&cd.title.includes('Tidal Sonata')).sort((a,b)=>a.set.disc-b.set.disc);
+      assert.deepEqual(discs.map(d=>d.medium),['vinyl','cd']);
+      for(const [index,disc] of discs.entries()){
+        const expected=tracks.slice(index*21,(index+1)*21);
+        assert.deepEqual(disc.works.map(w=>[w.title,w.duration,w.tracks]),expected.map(t=>[t.title,t.duration,[]]));
+        const slots=await page.evaluate(cd=>mediaQA.discTracks(cd),disc);
+        assert.deepEqual(slots.map(slot=>slot.title),expected.map(t=>t.title));
+      }
+      assert.deepEqual(discs[0].works.map(w=>w.position),tracks.slice(0,21).map(t=>t.position));
+    } finally {await f.close();}
+  });
   await test('barcode 9787884181865 imports one work, one audio slot and only Side A',async()=>{
     const f=await fixture(),{page,state}=f;
     const release=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/discogs-20011237.json'),'utf8'));

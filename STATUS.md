@@ -2,7 +2,12 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 56 delivered (2026-11-09)
+## Current milestone: Discogs format headings and English-only site (2026-11-09)
+
+- [Discogs release 37843299](https://www.discogs.com/release/37843299) for barcode **9787884182404** lists 21 tracks below each of the Vinyl and CD format headings. PMCO treated those headings as work titles. The importer now treats format headings as boundaries and preserves musical headings and indexes.
+- The public Discogs fixture saves **21 independent works per disc** and preserves duration, audio order and vinyl sides. Lookup normalization passed all **18** checks. Windows **0.3.1** build and site deployment pending.
+
+## Previous milestone: PMCO 0.3.1 build 56 delivered (2026-11-09)
 
 - [Discogs release 10374216](https://www.discogs.com/release/10374216) for barcode **028942761124** explicitly labels **427 612-2 01 #** as **CD1** and **427 613-2 01 #** as **CD2**. PMCO previously joined those values into one field and copied it to each item. Auto-fill now uses disc-labelled identifiers and preserves distinct pressing variants within that disc. Ambiguous matrix numbers on sets require manual entry.
 - Shelf card titles are limited to three visual lines, with full text in the profile and on hover. Removed the catalogue-progress and collection-quantity notes from profiles. Quantities above one display as **xN** at the lower right of the shelf card and profile.

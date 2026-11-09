@@ -1,0 +1,309 @@
+{
+  "id": 37843299,
+  "title": "蔚蓝档案 潮汐奏鸣 纪念彩胶专辑礼盒 = Blue Archive Tidal Sonata Vinyl Gift Box ",
+  "year": 2026,
+  "country": "China",
+  "formats": [
+    {
+      "name": "Vinyl",
+      "qty": "1",
+      "descriptions": [
+        "LP",
+        "Album"
+      ],
+      "text": "Picture Disc"
+    },
+    {
+      "name": "CD",
+      "qty": "1",
+      "descriptions": [
+        "Minimax",
+        "Album"
+      ]
+    },
+    {
+      "name": "Box Set",
+      "qty": "1",
+      "descriptions": []
+    }
+  ],
+  "labels": [
+    {
+      "name": "Bilibili",
+      "catno": "ISBN 978-7-88418-241-1"
+    }
+  ],
+  "identifiers": [
+    {
+      "type": "Barcode",
+      "value": "9787884182404",
+      "description": "CD"
+    }
+  ],
+  "tracklist": [
+    {
+      "type_": "heading",
+      "position": "",
+      "title": "Vinyl",
+      "duration": ""
+    },
+    {
+      "type_": "track",
+      "position": "A1",
+      "title": "Constant Moderato",
+      "duration": "2:17"
+    },
+    {
+      "type_": "track",
+      "position": "A2",
+      "title": "Connected Sky",
+      "duration": "2:00"
+    },
+    {
+      "type_": "track",
+      "position": "A3",
+      "title": "Hifumi Daisuki",
+      "duration": "2:29"
+    },
+    {
+      "type_": "track",
+      "position": "A4",
+      "title": "After School Dessert",
+      "duration": "2:02"
+    },
+    {
+      "type_": "track",
+      "position": "A5",
+      "title": "Sugar Story",
+      "duration": "2:00"
+    },
+    {
+      "type_": "track",
+      "position": "A6",
+      "title": "Pixel Time",
+      "duration": "2:09"
+    },
+    {
+      "type_": "track",
+      "position": "A7",
+      "title": "Step by Step",
+      "duration": "2:10"
+    },
+    {
+      "type_": "track",
+      "position": "A8",
+      "title": "Unwelcome School",
+      "duration": "2:00"
+    },
+    {
+      "type_": "track",
+      "position": "A9",
+      "title": "Shady Girls",
+      "duration": "2:34"
+    },
+    {
+      "type_": "track",
+      "position": "A10",
+      "title": "Constant Moderato Piano Arrange",
+      "duration": "3:05"
+    },
+    {
+      "type_": "track",
+      "position": "B1",
+      "title": "Aoharu",
+      "duration": "1:48"
+    },
+    {
+      "type_": "track",
+      "position": "B2",
+      "title": "Luminous Memory",
+      "duration": "2:17"
+    },
+    {
+      "type_": "track",
+      "position": "B3",
+      "title": "Midnight Trip",
+      "duration": "1:33"
+    },
+    {
+      "type_": "track",
+      "position": "B4",
+      "title": "Alkaline Tears",
+      "duration": "2:25"
+    },
+    {
+      "type_": "track",
+      "position": "B5",
+      "title": "Black Suit",
+      "duration": "1:51"
+    },
+    {
+      "type_": "track",
+      "position": "B6",
+      "title": "Encroached Sky",
+      "duration": "1:58"
+    },
+    {
+      "type_": "track",
+      "position": "B7",
+      "title": "Glitch Street",
+      "duration": "2:06"
+    },
+    {
+      "type_": "track",
+      "position": "B8",
+      "title": "Shooting Stars",
+      "duration": "1:56"
+    },
+    {
+      "type_": "track",
+      "position": "B9",
+      "title": "RE Aoharu",
+      "duration": "2:21"
+    },
+    {
+      "type_": "track",
+      "position": "B10",
+      "title": "Responsibility",
+      "duration": "2:02"
+    },
+    {
+      "type_": "track",
+      "position": "B11",
+      "title": "Aoharu Band Arrange",
+      "duration": "1:54"
+    },
+    {
+      "type_": "heading",
+      "position": "",
+      "title": "CD",
+      "duration": ""
+    },
+    {
+      "type_": "track",
+      "position": "1",
+      "title": "Constant Moderato",
+      "duration": "2:17"
+    },
+    {
+      "type_": "track",
+      "position": "2",
+      "title": "Connected Sky",
+      "duration": "2:00"
+    },
+    {
+      "type_": "track",
+      "position": "3",
+      "title": "Hifumi Daisuki",
+      "duration": "2:29"
+    },
+    {
+      "type_": "track",
+      "position": "4",
+      "title": "After School Dessert",
+      "duration": "2:02"
+    },
+    {
+      "type_": "track",
+      "position": "5",
+      "title": "Sugar Story",
+      "duration": "2:00"
+    },
+    {
+      "type_": "track",
+      "position": "6",
+      "title": "Pixel Time",
+      "duration": "2:09"
+    },
+    {
+      "type_": "track",
+      "position": "7",
+      "title": "Step by Step",
+      "duration": "2:10"
+    },
+    {
+      "type_": "track",
+      "position": "8",
+      "title": "Unwelcome School",
+      "duration": "2:00"
+    },
+    {
+      "type_": "track",
+      "position": "9",
+      "title": "Shady Girls",
+      "duration": "2:34"
+    },
+    {
+      "type_": "track",
+      "position": "10",
+      "title": "Constant Moderato Piano Arrange",
+      "duration": "3:05"
+    },
+    {
+      "type_": "track",
+      "position": "11",
+      "title": "Aoharu",
+      "duration": "1:48"
+    },
+    {
+      "type_": "track",
+      "position": "12",
+      "title": "Luminous Memory",
+      "duration": "2:17"
+    },
+    {
+      "type_": "track",
+      "position": "13",
+      "title": "Midnight Trip",
+      "duration": "1:33"
+    },
+    {
+      "type_": "track",
+      "position": "14",
+      "title": "Alkaline Tears",
+      "duration": "2:25"
+    },
+    {
+      "type_": "track",
+      "position": "15",
+      "title": "Black Suit",
+      "duration": "1:51"
+    },
+    {
+      "type_": "track",
+      "position": "16",
+      "title": "Encroached Sky",
+      "duration": "1:58"
+    },
+    {
+      "type_": "track",
+      "position": "17",
+      "title": "Glitch Street",
+      "duration": "2:06"
+    },
+    {
+      "type_": "track",
+      "position": "18",
+      "title": "Shooting Stars",
+      "duration": "1:56"
+    },
+    {
+      "type_": "track",
+      "position": "19",
+      "title": "RE Aoharu",
+      "duration": "2:21"
+    },
+    {
+      "type_": "track",
+      "position": "20",
+      "title": "Responsibility",
+      "duration": "2:02"
+    },
+    {
+      "type_": "track",
+      "position": "21",
+      "title": "Aoharu Band Arrange",
+      "duration": "1:54"
+    }
+  ]
+}

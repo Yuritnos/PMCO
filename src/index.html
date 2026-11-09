@@ -8347,6 +8347,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function dgWorks(tracklist, composers, context) {
     context = context || { credits: [], artists: [], names: {}, positions: [] };
     var works = [], cur = null, grouping = "";
+    var formatCredits = [], formatArtists = [];
     function work(title, credits, artists) {
       cur = { title: dgTitle(title), composer: "", tracks: [] };
       cur.sourceCredits = credits || []; cur.sourceArtists = artists || [];
@@ -8356,8 +8357,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       into.tracks.push({ title: dgTitle(String(t.title || "").replace(/^\d+\.\s+/, "")), duration: DURATION.test(t.duration || "") ? t.duration : "" });
       if (/^[A-Z]\d*$/i.test(String(t.position || ""))) into.tracks[into.tracks.length-1].position = t.position;
       var release = context.credits.filter(function (a) { return dgCreditApplies(a.tracks, t.position, context.positions); });
-      var own = (t.extraartists || []).concat(into.sourceCredits);
-      var named = (t.artists || []).concat(into.sourceArtists);
+      var own = (t.extraartists || []).concat(into.sourceCredits, formatCredits);
+      var named = (t.artists || []).concat(into.sourceArtists, formatArtists);
       var byCredit = dgComposers(own), scopedComposers = dgComposers(release.filter(function (a) { return a.tracks; })), releaseComposers = dgComposers(release);
       var composer = byCredit[0] || named.map(function (a) { return dgClean(a.name); }).filter(function (n) { return composers.indexOf(n) >= 0; })[0] ||
         (scopedComposers.length === 1 ? scopedComposers[0] : releaseComposers.length === 1 ? releaseComposers[0] : "");
@@ -8388,7 +8389,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         }
         cur = null; grouping = "";
       } else if (t.type_ === "heading") {
-        work(t.title, t.extraartists, t.artists); grouping = "heading";
+        if (/^(?:(?:vinyl|lp|cd|sacd|dvd|bd|blu[- ]?ray|cassette)(?:\s*\d+)?|(?:disc|disk)\s*\d+)$/i.test(String(t.title || "").trim())) {
+          formatCredits = t.extraartists || []; formatArtists = t.artists || [];
+          cur = null; grouping = "";
+        } else {
+          work(t.title, t.extraartists, t.artists); grouping = "heading";
+        }
       } else if (t.type_ === "track" || !t.type_) {
         var title = String(t.title || ""), cut = title.indexOf(": ");
         var movement = /^(?:[IVXLCDM]+[.)]\s+|\d+[.)]\s+|(?:allegro|andante|adagio|largo|presto|lento|moderato|vivace|scherzo|finale)\b)/i.test(title);
