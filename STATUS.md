@@ -2,10 +2,17 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: Discogs format headings and English-only site (2026-11-09)
+## Current milestone: PMCO 0.3.1 build 57 and English-only website published (2026-11-09)
 
 - [Discogs release 37843299](https://www.discogs.com/release/37843299) for barcode **9787884182404** lists 21 tracks below each of the Vinyl and CD format headings. PMCO treated those headings as work titles. The importer now treats format headings as boundaries and preserves musical headings and indexes.
-- The public Discogs fixture saves **21 independent works per disc** and preserves duration, audio order and vinyl sides. Lookup normalization passed all **18** checks. Windows **0.3.1** build and site deployment pending.
+- The public Discogs fixture saves **21 independent works per disc** and preserves duration, audio order and the **10/11** vinyl side split. **44 frontend checks passed** across lookup normalization (18) and media editor (26).
+- **PMCO 0.3.1 build 57 delivered.** [Windows CI run 42626346736](https://github.com/Yuritnos/PMCO/actions/runs/42626346736) built **7d8db76e70503f917bca1f44d1eed2c35f7fb461** and passed **25 native tests**.
+- Artifact **13679131849**, ZIP **8,551,731 bytes**, SHA-256 **b0bac1d3d533dca6461da45177eb168fd6aa0b3a19e5cd2cd2388fd2c5efdf55**. Both packages passed integrity, PMCO.exe 0.3.1 x64, MSI upgrade identity, nine matching FLAC resources and normalized payload comparison.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,983,158 bytes, SHA-256 **7A08A86DFCF78B324B9DBB942FE2BA482B37EA7B5E7ED45D417F76CD14149341**). Verified Medium integrity label.
+- Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,788,224 bytes, SHA-256 **A374761B5E496B9F31034C7636F9254A0F22995CB1D313B7D9AD9ADB6BFAD956**). Verified Medium integrity label.
+- [Published build 57 and the English-only site](https://pmco.pages.dev/) to Cloudflare Pages **pmco**, production branch **main**. Deployment **https://b2510714.pmco.pages.dev/** contains 60 files. The English homepage, support, privacy and three-URL sitemap are live. The former Japanese and Chinese home, support and privacy routes return **301** to their English equivalents. The language selector and translated runtime copy were removed from the website.
+- Both public installer downloads return **200** with attachment headers and byte-for-byte match staging. Both ownership files are reachable with original content. An unknown URL returns **404**. Local browser checks covered desktop and mobile, older language preferences, theme and screenshot navigation.
+- Build 56 installers and source are archived in **installers/rollback-before-format-headings-20261109/**. Build and live deployment evidence is in **installers/staging-0.3.1-42626346736/**.
 
 ## Previous milestone: PMCO 0.3.1 build 56 delivered (2026-11-09)
 
@@ -16,7 +23,7 @@ Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify 
 - Artifact **13676808570**, ZIP **8,544,753 bytes**, SHA-256 **34bbf0d52907456a7a500bb0410b812f944bfd7f34cf6a47a4d70d5a2c6a398c**. Both packages passed archive integrity, PMCO.exe 0.3.1 x64, MSI upgrade identity, nine matching FLAC resources and normalized executable comparison.
 - Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,981,946 bytes, SHA-256 **CB1AACBF19B4F8F5F8E83598383CD01393590094CE7FD0CE589537E769090E77**). Verified Medium integrity label.
 - Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,780,032 bytes, SHA-256 **76CBA22A23EAA463F69EC1CD803C959953179F00542BE61C45B3DFBFCF959551**). Verified Medium integrity label.
-- Build 55 installers and source are archived in **installers/rollback-before-matrix-and-card-20261109/**. Build evidence is in **installers/staging-0.3.1-42622946362/**. The public site serves build 54.
+- Build 55 installers and source are archived in **installers/rollback-before-matrix-and-card-20261109/**. Build evidence is in **installers/staging-0.3.1-42622946362/**. At that milestone, the public site served build 54.
 
 ## Previous milestone: PMCO 0.3.1 build 55 delivered (2026-11-09)
 
