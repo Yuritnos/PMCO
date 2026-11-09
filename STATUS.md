@@ -2,12 +2,18 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: All music imports and independent lookup (2026-11-09)
+## Current milestone: PMCO 0.3.1 build 55 delivered (2026-11-09)
 
 - All music now offers **Add music** for audio-only albums. Audio stays open at the top of the editor, followed by album information and works. The editor omits physical quantity, format, details and drive controls. Music-only records reuse the local audio and playlist paths and are excluded from physical shelves and Statistics.
 - Removed the marked account summary, auto-fill, folder import and empty cover notes. Manually adding a vinyl side starts one blank work.
 - Discogs lookup uses the explicit search value independently of the form title or medium. Barcode **9787884181865** finds the vinyl edition with CD selected, and switching medium retains the search result.
-- Focused checks cover barcode lookup and manual Side B, music-only import/save/reopen/edit/playlist and physical count isolation, plus removed notes. Windows **0.3.1** build pending.
+- **101 frontend checks passed** across media editor (23), lookup normalization (17), collection integration (38), audio drafts (7), focused persistence (1) and physical media (15). Two physical-media assertions about the standalone Blu-ray badge and mixed-vinyl positions also fail on the previous source **bfcdd11**.
+- **PMCO 0.3.1 build 55 delivered.** [Windows CI run 42615757274](https://github.com/Yuritnos/PMCO/actions/runs/42615757274) built **be65b48e4b79d72ef58bf82c8d56fbe9b20680e0** and passed **25 native tests**.
+- Artifact **13673440284**, ZIP **8,543,422 bytes**, SHA-256 **0dd9c21e24873414d03760b908ac22236be10f5687567a091b89919148bee684**. Both installers passed integrity, x64 PMCO.exe 0.3.1 and MSI upgrade-identity checks. All nine FLAC files match, and the app payloads match after normalizing the installer-type marker.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,981,547 bytes, SHA-256 **898010AD513FE41D48F8F874CAF4029C8B8358265E7AE311A6E8DB7269C8ABCD**). The delivered file has a Medium integrity label.
+- Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,780,032 bytes, SHA-256 **105190097C4EF00857D6F3FCC825E6193F6545692C86F8000D2BBD1DEA429D81**). The delivered file has a Medium integrity label.
+- Build 54 packages and source are archived in **installers/rollback-before-audio-only-20261109/**. Build evidence is in **installers/staging-0.3.1-42615757274/**. The public site serves 0.3.1 build 54.
+- The new music-only marker is understood by build 55. Older clients display synced audio-only entries as legacy CDs.
 
 ## Previous milestone: PMCO 0.3.1 build 54 published (2026-11-09)
 
