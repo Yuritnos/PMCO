@@ -2,11 +2,17 @@
 
 Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 Windows build and website update (2026-11-09)
+## Current milestone: PMCO 0.3.1 build 54 published (2026-11-09)
 
 - Discogs release **20011237** for barcode **9787884181865** lists **灯华梦踏** once at position **A**, with a blank duration and a **Single Sided** format description. PMCO previously excluded position-bearing tracks from its duplicate-title collapse, and the editor added the default reverse side. The screenshot’s **13:17** was the input placeholder.
 - Vinyl lookup now folds a matching sole track into its work while retaining the printed position, duration and one audio slot. An explicitly single-sided release or a listing with all positions on its first side omits the empty reverse tab. Per-item side data stays separate in sets. Unknown sides keep the editable defaults.
-- **39 checks passed** across lookup normalization (17) and media editor (22), including barcode auto-fill/save/reopen with the public Discogs fixture and mixed side layouts. Compared the previous and corrected importer outputs against the same fixture. PMCO 0.3.1 includes this correction. Windows build and website delivery are in progress.
+- **39 checks passed** across lookup normalization (17) and media editor (22), including barcode auto-fill/save/reopen with the public Discogs fixture and mixed side layouts. Compared the previous and corrected importer outputs against the same fixture.
+
+- **PMCO 0.3.1 build 54 delivered.** [Windows CI run 42605746078](https://github.com/Yuritnos/PMCO/actions/runs/42605746078) built source **c062943e21ab60ac0d66e0371f19c931a2651b7d** and passed **25 native tests**.
+- Artifact **13666804626** contains both x64 packages. ZIP **8,547,879 bytes**, SHA-256 **87b72771916633158020fe252a8682748fc9a263c63ad1ac80879c1adf6630ac**. Both installers passed extraction, PMCO.exe 0.3.1 version and upgrade identity checks, nine matching FLAC resources, and normalized executable equivalence.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (**3,981,117 bytes**, SHA-256 **DA16BF1884ED95BD42472C9DD8FDFD5AA524C7AE880E51D27CF636A3D3393C90**) and **installers/msi/PMCO_0.3.1_x64_en-US.msi** (**4,784,128 bytes**, SHA-256 **1A3B83A5DB83A7CE4F8913B14CC894CAD9C3101EA28F861C18A4A045EF675DF0**). Both delivered files have Medium integrity labels. The verified build 53 installers and source are archived in **installers/rollback-before-0.3.1-20261109/**.
+- **Published 0.3.1 build 54 to Cloudflare Pages production**, project **pmco**, branch **main**. Deployment **https://51df4c94.pmco.pages.dev/**. All three public locales serve version 0.3.1, build 54 and the new download links. Both public installer responses return HTTP 200 with attachment headers and match the verified artifact bytes and hashes. The localized support and privacy pages and both ownership verification files are in the deployment.
+- Evidence: **installers/staging-0.3.1-42605746078/{artifact,verification,replacement,live-website-verification}.json** and build.log.
 
 ## Previous milestone: full-width manufacturer alias correction — build 53 delivered (2026-11-08)
 
