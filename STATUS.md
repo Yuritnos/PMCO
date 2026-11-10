@@ -2,11 +2,16 @@
 
 Updated: 2026-11-10 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 3.3 set editor improvements (2026-11-10)
+## Current milestone: PMCO 0.3.1 build 59 delivered (2026-11-10)
 
 - Set item navigation stays on the left while the form scrolls. The list scrolls independently, and Add and Remove use icons with localized accessible labels.
 - Item details offers **Apply to other items** for sets. Filled fields and other included items start selected. Applying stages compatible fields in the chosen drafts, with persistence through the normal set save.
-- Focused browser regressions covered mixed-media copy, draft and save behavior, keyboard-friendly item controls, narrow layout and independent rail scrolling. Windows **0.3.1** build pending.
+- **84 frontend checks passed** across media editor (28), collection integration (38), and lookup normalization (18). Regressions cover draft and save behavior, mixed-media compatibility, narrow layout and independent list scrolling.
+- **PMCO 0.3.1 build 59 delivered.** [Windows CI run 42801666721](https://github.com/Yuritnos/PMCO/actions/runs/42801666721) built **a0508e769d47f48627737e9f9c56989e2ddb59c4** and passed **25 native tests**.
+- Artifact **13755968172**, ZIP **8,553,342 bytes**, SHA-256 **ad9de109a4e1c38f3cebdb6ad530f8918ed0e7f5f2fc8d8a626eb9a752de801e**. Both installers passed archive integrity, PMCO.exe 0.3.1 x64, MSI upgrade identity, nine matching FLAC resources and normalized payload comparison.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,983,750 bytes, SHA-256 **618290338581191D07C60C736FE67A1B27C9AF7A4B58736967E5BE9B04473204**). Verified Medium integrity label.
+- Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,788,224 bytes, SHA-256 **B6EBD2B3F186EF546B91FF56B7D88237AC80E3F767097D9DC3A2C95BF0CB3051**). Verified Medium integrity label.
+- Build 58 packages and source are archived in **installers/rollback-before-set-editor-20261110/**. Build evidence is in **installers/staging-0.3.1-42801666721/**.
 
 ## Previous milestone: PMCO 0.3.1 build 58 delivered (2026-11-09)
 
