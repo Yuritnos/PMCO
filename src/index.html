@@ -1586,10 +1586,22 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         <button class="btn" id="submit" type="submit">Add to collection</button>
         <button class="btn quiet" id="cancel-edit" type="button" hidden data-i18n="cancel">Cancel</button>
       </div>
-    <datalist id="suggest-label"></datalist>
-    <datalist id="suggest-issuer"></datalist>
-    <datalist id="suggest-manufacturer"></datalist>
-    <datalist id="suggest-madeIn"></datalist>
+    <datalist id="suggest-label">
+      <option value="Decca"><option value="Deutsche Grammophon"><option value="EMI">
+      <option value="London Records"><option value="Naxos"><option value="Philips">
+      <option value="RCA Red Seal"><option value="Sony Classical"><option value="Warner Classics">
+    </datalist>
+    <datalist id="suggest-issuer">
+      <option value="Sony Music Entertainment"><option value="Universal Music Group"><option value="Warner Music Group">
+    </datalist>
+    <datalist id="suggest-manufacturer">
+      <option value="MPO"><option value="Optimal Media"><option value="Polydor K.K.">
+      <option value="Sonopress"><option value="Sony DADC"><option value="Universal M&amp;L">
+    </datalist>
+    <datalist id="suggest-madeIn">
+      <option value="West Germany"><option value="Japan"><option value="China"><option value="France">
+      <option value="Germany"><option value="United Kingdom"><option value="United States">
+    </datalist>
     </form>
   </section>
 </div>
@@ -3236,39 +3248,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     $("open-add").hidden = currentAlbum === "music" && !AudioLib.ready;
     $("fab-text").textContent = pl || currentAlbum === "music" ? t("plAddMusic") : addReleaseText();
   }
-  function fillMetadataSuggestions() {
-    var defaults = {
-      label: ["Deutsche Grammophon", "Decca", "Philips", "EMI", "Sony Classical", "Warner Classics", "Naxos", "BIS", "Chandos", "Hyperion", "ECM", "RCA Red Seal"],
-      issuer: ["Universal Music Group", "Sony Music Entertainment", "Warner Music Group"],
-      manufacturer: ["Sony DADC", "Sonopress", "Universal M&L", "MPO", "Optimal Media", "Polydor K.K."],
-      madeIn: ["West Germany", "Japan", "Germany", "United Kingdom", "United States", "France", "China"]
-    };
-    Object.keys(defaults).forEach(function (field) {
-      var host = $("suggest-" + field), seen = new Set(), values = [];
-      host.textContent = "";
-      // Normalize suggestions only; retain the original values in saved records and inputs.
-      defaults[field].concat(cds.map(function (cd) { return cd[field] || ""; })).forEach(function (value) {
-        value = String(value).trim().replace(/\s+/g, " ");
-        // IME full-width characters match known aliases; saved and custom names remain untouched.
-        if (field === "manufacturer" && /^univer(?:s)?al\s*m\s*&\s*l(?:,\s*germany)?$/i.test(value.normalize("NFKC"))) value = "Universal M&L";
-        if (field === "madeIn") {
-          if (/^(?:US|USA|U\.S\.|U\.S\.A\.)$/i.test(value)) value = "United States";
-          if (/^(?:Europe|Austria|Korea|Netherlands)$/i.test(value)) return;
-        }
-        var key = value.toLowerCase();
-        if (!value || seen.has(key)) return;
-        seen.add(key);
-        values.push(value);
-      });
-      values.sort(function (a, b) {
-        if (field === "madeIn") {
-          var rank = function (value) { return value === "West Germany" ? 0 : value === "Japan" ? 1 : 2; };
-          if (rank(a) !== rank(b)) return rank(a) - rank(b);
-        }
-        return cmpText(a, b);
-      }).forEach(function (value) { var option = el("option"); option.value = value; host.appendChild(option); });
-    });
-  }
   function fillComposers() {
     var dl = $("composers");
     dl.textContent = "";
@@ -3304,7 +3283,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     }
     translateSetForm();
     fillComposers();
-    fillMetadataSuggestions();
     refreshRows();
     if (lookupDiscRelease) qsa("#lookup-disc option").forEach(function (o) {
       o.textContent = t("setPosition", { n: o.value, total: lookupDiscRelease.lookupDiscs.length });
@@ -6046,7 +6024,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     currentAlbum = "all";
     if (!$("win-detail").hidden) closeWin("detail");
     if (!$("win-stats").hidden) closeWin("stats");
-    fillMetadataSuggestions();
     renderAlbums();
     renderGrid();
     $("f-" + kind).focus({ preventScroll: true });
@@ -8330,7 +8307,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function openAdd(musicOnly) {
     if (musicOnly) clearForm(true);
-    fillMetadataSuggestions();
     if (!formMusicOnly && !editingId && !discSession) $("medium").value = defaultMediumForView();
     if (!editingId) {
       var prev = readChecked();
@@ -8346,7 +8322,6 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     openWin("cd");
   }
   function startEdit(cd) {
-    fillMetadataSuggestions();
     clearForm(isMusicOnly(cd));
     $("collection-quantity").value = collectionQuantity(cd);
     loadDiscEditor(cd, false, true);

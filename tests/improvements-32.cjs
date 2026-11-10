@@ -7,7 +7,7 @@ let playwright;
 try { playwright = require('playwright'); }
 catch { playwright = require(path.join(process.env.USERPROFILE, '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')); }
 const html = fs.readFileSync(path.join(__dirname, '../src/index.html'), 'utf8').replace('  /* ---------- start ---------- */',
-  '  window.mediaQA = { fillMetadataSuggestions, renderHandlePolicy, openProfile, Cloud, listFields, cardFields, renderGrid, startEdit, setLang, openDetail, discTracks, dgMedia, dgDiscLists, discogsSource, lookupDiscData, populateLookupDrafts, playId: function(id) { playAudio(cdById(id)); }, renderPlaylist, moveCard, resetWorks, readWorks, cdFormDirty, closeWin, queue: function() { return clone(player.queue); }, currentEntry };\n  /* ---------- start ---------- */');
+  '  window.mediaQA = { renderHandlePolicy, openProfile, Cloud, listFields, cardFields, renderGrid, startEdit, setLang, openDetail, discTracks, dgMedia, dgDiscLists, discogsSource, lookupDiscData, populateLookupDrafts, playId: function(id) { playAudio(cdById(id)); }, renderPlaylist, moveCard, resetWorks, readWorks, cdFormDirty, closeWin, queue: function() { return clone(player.queue); }, currentEntry };\n  /* ---------- start ---------- */');
 const set = {id:'mixed', title:'Mixed anthology', total:3};
 const seed = [
   {id:'old', title:'Legacy CD', extra:{keep:true}, works:[{title:'Old work', tracks:[]}]},
@@ -87,8 +87,17 @@ async function main(){
  assert.equal(await page.locator('#card-old .medium-badge').textContent(),'CD');assert((await page.locator('#card-m1 .medium-badge').textContent()).includes('2 CD'));
  await view(page,'cd');assert.equal(await page.locator('#card-old .medium-badge').count(),0);
  await page.evaluate(cd=>mediaQA.startEdit(cd),state.doc.cds[0]);await page.locator('#more-details').evaluate(n=>n.open=true);
- for(const id of ['label','issuer','manufacturer','madeIn']){assert(await page.locator('#suggest-'+id+' option').count()>1);await page.locator('#'+id).fill('Custom '+id);}
- await save(page);assert.equal(state.doc.cds.find(c=>c.id==='old').issuer,'Custom issuer');
+ const fields=['label','issuer','manufacturer','madeIn'];
+ const suggestions=()=>Promise.all(fields.map(id=>page.locator('#suggest-'+id+' option').evaluateAll(nodes=>nodes.map(n=>n.value))));
+ const presets=await suggestions();
+ for(const id of fields)await page.locator('#'+id).fill('Custom '+id);
+ await save(page);
+ for(const id of fields)assert.equal(state.doc.cds.find(c=>c.id==='old')[id],'Custom '+id);
+ await page.locator('#open-add').click();
+ for(const id of fields)assert.equal(await page.locator('#'+id).inputValue(),'');
+ assert.deepEqual(await suggestions(),presets);
+ await page.reload();
+ assert.deepEqual(await suggestions(),presets);
  }finally{await f.close();}});
  await test('Discogs company and explicit recording dates fill; copyright/release years never substitute',async()=>{const f=await fixture(),{page,state}=f;try{
  state.lookup={id:1,title:'Fixture',year:2000,companies:[{entity_type_name:'Record Company',name:'Fixture Issuer'}],notes:'Recorded in London, May 1985 and June 1987. ℗ 1999',tracklist:[]};
@@ -129,7 +138,7 @@ async function main(){
  }
  assert.equal(await page.locator('#pf-handle').getAttribute('aria-describedby'),'pf-handle-hint pf-handle-policy');
  }finally{await f.close();}});
- await test('suggestions collapse aliases, pin country order and preserve legacy stored/input values',async()=>{const extra=[
+ await test('only preset suggestions are offered while legacy stored and input values are preserved',async()=>{const extra=[
  {id:'alias1',title:'Alias 1',manufacturer:'Universal M&L',madeIn:'US',label:'RCA Red Seal'},
  {id:'alias2',title:'Alias 2',manufacturer:'Universal M & L',madeIn:'Europe',label:'RCA red seal'},
  {id:'alias3',title:'Alias 3',manufacturer:'Universal M & L, Germany',madeIn:'Austria'},
@@ -140,14 +149,15 @@ async function main(){
  {id:'alias8',title:'IME typo fixture',manufacturer:'Univeral M\uFF06L'},
  {id:'alias9',title:'IME ampersand fixture',manufacturer:'Universal M\uFF06L'},
  {id:'alias10',title:'Fullwidth fixture',manufacturer:'Ｕｎｉｖｅｒｓａｌ Ｍ＆Ｌ'},
- {id:'custom-width',title:'Custom width fixture',manufacturer:'Other ＆ Company'}
+ {id:'custom-width',title:'Custom width fixture',manufacturer:'Other ＆ Company',label:'Bilibili',issuer:'Independent issuer',madeIn:'Iceland'}
  ];const f=await fixture({extra}),{page,state}=f;try{
  const before=structuredClone(state.doc);await page.evaluate(cd=>mediaQA.startEdit(cd),extra[2]);await page.locator('#more-details').evaluate(n=>n.open=true);
  const options=async field=>page.locator('#suggest-'+field+' option').evaluateAll(nodes=>nodes.map(n=>n.value));
  assert.deepEqual((await options('manufacturer')).filter(n=>/^Univer/i.test(n)),['Universal M&L']);
- const manufacturerOptions=await options('manufacturer');for(const id of ['alias8','alias9','alias10'])assert(!manufacturerOptions.includes(extra.find(c=>c.id===id).manufacturer));assert(manufacturerOptions.includes('Other ＆ Company'));
+ const manufacturerOptions=await options('manufacturer');for(const id of ['alias8','alias9','alias10','custom-width'])assert(!manufacturerOptions.includes(extra.find(c=>c.id===id).manufacturer));
  assert.deepEqual((await options('label')).filter(n=>/^RCA/i.test(n)),['RCA Red Seal']);
- const countries=await options('madeIn');assert.deepEqual(countries.slice(0,2),['West Germany','Japan']);assert(countries.includes('United States'));assert(!countries.some(n=>['US','Europe','Austria','Korea','Netherlands'].includes(n)));
+ assert(!(await options('label')).includes('Bilibili'));assert(!(await options('issuer')).includes('Independent issuer'));
+ const countries=await options('madeIn');assert.deepEqual(countries.slice(0,2),['West Germany','Japan']);assert(countries.includes('United States'));assert(!countries.some(n=>['US','Europe','Austria','Korea','Netherlands','Iceland'].includes(n)));
  assert.equal(await page.locator('#manufacturer').inputValue(),'Universal M & L, Germany');assert.equal(await page.locator('#madeIn').inputValue(),'Austria');assert.deepEqual(state.doc,before);
  await page.locator('#notes').fill('Only notes changed');await save(page);const saved=state.doc.cds.find(c=>c.id==='alias3');assert.equal(saved.manufacturer,'Universal M & L, Germany');assert.equal(saved.madeIn,'Austria');
  const unicodeFixture=extra.find(c=>c.id==='alias8');await page.evaluate(cd=>mediaQA.startEdit(cd),unicodeFixture);await page.locator('#more-details').evaluate(n=>n.open=true);assert.equal(await page.locator('#manufacturer').inputValue(),unicodeFixture.manufacturer);await page.locator('#notes').fill('Preserve original IME spelling');await save(page);assert.equal(state.doc.cds.find(c=>c.id===unicodeFixture.id).manufacturer,unicodeFixture.manufacturer);
