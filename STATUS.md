@@ -2,7 +2,18 @@
 
 Updated: 2026-11-10 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 59 delivered (2026-11-10)
+## Current milestone: PMCO 0.3.1 build 60 published (2026-11-10)
+
+- Label, Issuing corporation, Manufactured by and Country of manufacture use fixed preset lists. Manual and Discogs-filled values belong to the individual item. Collection values such as Bilibili and legacy manufacturer aliases never enter the preset lists.
+- **Six focused browser checks passed** across metadata suggestions, custom and legacy values, Discogs lookup, localized fields and responsive layout.
+- **PMCO 0.3.1 build 60 delivered.** [Windows CI run 42804169745](https://github.com/Yuritnos/PMCO/actions/runs/42804169745) built **4f30bae12094ef939506dd1f27795a05df643bba** and passed **25 native tests**.
+- Artifact **13758560603**, ZIP **8,547,568 bytes**, SHA-256 **b2a0d79f803e585dd3c08a1d1eb2675570e13ade33637bfe944898e30d0d06c9**. Both installers passed integrity, PMCO.exe 0.3.1 x64, MSI upgrade identity, nine matching FLAC resources and normalized payload comparison.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (3,984,006 bytes, SHA-256 **87552B428867063BC7E6A9113D8DCAAB5DEEBCD9ABDFE5C2400D7EF64077A3ED**). Verified Medium integrity label.
+- Replaced **installers/msi/PMCO_0.3.1_x64_en-US.msi** (4,784,128 bytes, SHA-256 **7B2CCA36FF8CD2DCC30FFA1D43309CD6D7298A676D62A6E74A242A105F030F4D**). Verified Medium integrity label.
+- [Published build 60](https://pmco.pages.dev/) to Cloudflare Pages project **pmco**, production branch **main**. Deployment **https://bbd6c888.pmco.pages.dev/** contains 62 files. Both public downloads return **200** with attachment headers and match the verified installers by byte count and SHA-256.
+- Verified the three English pages, sitemap, six locale redirects, ownership files and 404 response. Build 59 installers and source are archived in **installers/rollback-before-fixed-suggestions-20261110/**. Build and publication evidence is in **installers/staging-0.3.1-42804169745/**.
+
+## Previous milestone: PMCO 0.3.1 build 59 delivered (2026-11-10)
 
 - Set item navigation stays on the left while the form scrolls. The list scrolls independently, and Add and Remove use icons with localized accessible labels.
 - Item details offers **Apply to other items** for sets. Filled fields and other included items start selected. Applying stages compatible fields in the chosen drafts, with persistence through the normal set save.
