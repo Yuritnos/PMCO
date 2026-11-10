@@ -707,7 +707,9 @@ async function main() {
       assert.equal(await page.locator('#set-choice-label').textContent(),'Standalone or set');
       assert.equal(await page.locator('label[for="set-choice"]').count(),0);
       await page.locator('#form-add-disc').click();
-      assert.equal(await page.locator('#form-remove-disc').textContent(),'Remove this item');
+      assert.equal(await page.locator('#form-add-disc').textContent(),'+');
+      assert.equal(await page.locator('#form-remove-disc').textContent(),'−');
+      assert.equal(await page.locator('#form-remove-disc').getAttribute('aria-label'),'Remove this item');
       assert.equal(await page.locator('#form-add-disc').getAttribute('class'),await page.locator('#form-remove-disc').getAttribute('class'));
       const image=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=16;c.height=8;const x=c.getContext('2d');x.fillStyle='red';x.fillRect(0,0,8,8);x.fillStyle='blue';x.fillRect(8,0,8,8);return c.toDataURL();});
       await page.locator('#photo').setInputFiles({name:'album.png',mimeType:'image/png',buffer:Buffer.from(image.split(',')[1],'base64')});

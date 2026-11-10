@@ -1,8 +1,14 @@
 # PMCO current status
 
-Updated: 2026-11-09 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
+Updated: 2026-11-10 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 58 delivered (2026-11-09)
+## Current milestone: PMCO 3.3 set editor improvements (2026-11-10)
+
+- Set item navigation stays on the left while the form scrolls. The list scrolls independently, and Add and Remove use icons with localized accessible labels.
+- Item details offers **Apply to other items** for sets. Filled fields and other included items start selected. Applying stages compatible fields in the chosen drafts, with persistence through the normal set save.
+- Focused browser regressions covered mixed-media copy, draft and save behavior, keyboard-friendly item controls, narrow layout and independent rail scrolling. Windows **0.3.1** build pending.
+
+## Previous milestone: PMCO 0.3.1 build 58 delivered (2026-11-09)
 
 - Removed Release decades. Composers and labels show their six highest counts. Items added each year selects the six busiest years and displays them chronologically. The physical media chart still uses the six sidebar categories.
 - Three focused browser checks passed for the six-row limit, media navigation, and narrow layout in all three app languages.

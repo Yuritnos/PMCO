@@ -1077,9 +1077,38 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 .set-disc-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
 .set-link-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow: auto; }
 .set-link-list label { display: flex; gap: 8px; align-items: baseline; overflow-wrap: anywhere; }
-.disc-editor-tools { display: flex; flex-direction: column; gap: 10px; }
-.disc-editor-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-editor-panel:has(#form-disc-tools:not([hidden])) {
+  width: min(748px, 100%);
+  display: grid;
+  grid-template-columns: clamp(78px, 20vw, 150px) minmax(0, 1fr);
+  column-gap: 16px;
+}
+.cd-editor-panel > .panel-head { grid-column: 1 / -1; }
+.cd-editor-panel > form { min-width: 0; }
+.disc-editor-tools {
+  position: sticky; top: 0; align-self: start;
+  max-height: calc(100dvh - 82px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.disc-editor-actions { display: flex; flex: none; gap: 6px; }
+.disc-editor-tabs { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior: contain; gap: 6px; }
+.disc-editor-tabs .item-tab { flex: none; }
 .disc-editor-tabs button { white-space: normal; overflow-wrap: anywhere; }
+.disc-editor-tabs .segment-select { padding: 8px; }
+.item-tab-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.copy-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.copy-details-grid fieldset { min-width: 0; margin: 0; border: 1px solid var(--line); border-radius: 4px; padding: 8px; }
+.copy-details-grid legend { padding: 0 4px; }
+.copy-details-options { max-height: min(34vh, 270px); overflow-y: auto; overscroll-behavior: contain; }
+.copy-details-grid label { display: flex; align-items: start; gap: 6px; padding: 4px 0; overflow-wrap: anywhere; cursor: pointer; }
+.copy-details-grid input { flex: none; accent-color: var(--accent); }
+.copy-details-all { border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+@media (max-width: 480px) {
+  .cd-editor-panel:has(#form-disc-tools:not([hidden])) { padding-inline: 8px; column-gap: 8px; }
+  .disc-editor-actions .iconbtn { width: 34px; }
+  .disc-editor-tabs .segment-select { padding: 6px 4px; font-size: 12px; }
+  .disc-editor-tabs .segment-action { flex-basis: 22px; padding: 2px; }
+}
 .disc-editor-tabs button[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .favlist .hint { padding: 6px 8px; }
 .favitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; background: transparent; border: 0; border-radius: 3px; cursor: pointer; text-align: left; font-size: 14px; }
@@ -1309,11 +1338,18 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
 <!-- Window: add or edit a CD -->
 <div class="overlay" id="win-cd" hidden>
-  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="add-h">
+  <section class="panel cd-editor-panel" role="dialog" aria-modal="true" aria-labelledby="add-h">
     <div class="panel-head">
       <h2 id="add-h">Add a CD</h2>
       <button type="button" class="iconbtn" id="close-cd" data-i18n-aria="close" aria-label="Close">×</button>
     </div>
+    <aside class="disc-editor-tools" id="form-disc-tools" hidden>
+      <div class="disc-editor-actions">
+        <button type="button" class="iconbtn" id="form-add-disc" data-i18n-aria="addDisc" data-i18n-title="addDisc" aria-label="Add item">+</button>
+        <button type="button" class="iconbtn" id="form-remove-disc" data-i18n-aria="discDelete" data-i18n-title="discDelete" aria-label="Remove this item" hidden>−</button>
+      </div>
+      <div id="form-disc-tabs" class="disc-editor-tabs" role="group" data-i18n-aria="discEditors" aria-label="Items"></div>
+    </aside>
     <form id="cd-form" autocomplete="off" novalidate>
       <section class="lookup" id="lookup">
         <label class="lbl" for="lookup-q" data-i18n="lookupHead">Find this CD online</label>
@@ -1382,21 +1418,14 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         </div><div class="field"><label class="lbl" for="collection-quantity" data-i18n="collectionQuantity">Collection quantity</label><div class="quantity-control"><input class="input" id="collection-quantity" type="number" min="1" max="9999" step="1" value="1"></div><p class="err" id="quantity-error" role="alert"></p></div></div>
         <div id="set-editor" hidden>
           <div class="field"><label class="lbl" for="set-total" data-i18n="setTotal">Discs in set</label><input class="input" id="set-total" type="number" min="1" max="999" value="2"></div>
+          <p class="hint" data-i18n="discDraftHint">Each disc keeps its own information, works, details and audio.</p>
         </div>
         <p class="err" id="set-err" role="alert"></p>
       </fieldset>
 
-      <div class="disc-editor-tools" id="form-disc-tools" hidden>
-        <div id="form-disc-tabs" class="disc-editor-tabs" role="group" data-i18n-aria="discEditors" aria-label="Discs"></div>
-        <div id="item-editor" class="item-editor" hidden>
-          <div class="field"><label class="lbl" for="item-name" data-i18n="itemName">Item name</label><input class="input" id="item-name" maxlength="200" autocomplete="off" data-i18n-ph="itemNamePh"></div>
-          <button type="button" class="btn small quiet" id="item-editor-done" data-i18n="done">Done</button>
-        </div>
-        <div class="favrow">
-          <button type="button" class="linkbtn" id="form-add-disc" data-i18n="addDisc">Add a disc</button>
-          <button type="button" class="linkbtn" id="form-remove-disc" data-i18n="removeDraftDisc" hidden>Remove this added disc</button>
-        </div>
-        <p class="hint" data-i18n="discDraftHint">Each disc keeps its own information, works, details and audio.</p>
+      <div id="item-editor" class="item-editor" hidden>
+        <div class="field"><label class="lbl" for="item-name" data-i18n="itemName">Item name</label><input class="input" id="item-name" maxlength="200" autocomplete="off" data-i18n-ph="itemNamePh"></div>
+        <button type="button" class="btn small quiet" id="item-editor-done" data-i18n="done">Done</button>
       </div>
 
       <details class="more form-section" id="albumOverall" open>
@@ -1509,6 +1538,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
             <label class="lbl" for="notes" data-i18n="notes">Notes</label>
             <textarea class="input" id="notes" rows="4" data-i18n-ph="notesPh" placeholder="Anything you want to remember about this disc"></textarea>
           </div>
+          <button type="button" class="btn small quiet" id="copy-details" data-i18n="copyDetails" hidden>Apply to other items</button>
         </div>
       </details>
 
@@ -1564,7 +1594,29 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   </section>
 </div>
 
-<!-- Window: settings -->
+<div class="overlay" id="win-copy-details" hidden>
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="copy-details-h">
+    <div class="panel-head">
+      <h2 id="copy-details-h" data-i18n="copyDetails">Apply to other items</h2>
+      <button type="button" class="iconbtn" id="close-copy-details" data-i18n-aria="close" aria-label="Close">×</button>
+    </div>
+    <p class="hint" data-i18n="copyDetailsHint">Selected values replace matching details in the chosen items. Save the set to keep the changes.</p>
+    <div class="copy-details-grid">
+      <fieldset>
+        <legend data-i18n="discDetails">Details</legend>
+        <label class="copy-details-all"><input type="checkbox" id="copy-details-all-fields"><span data-i18n="copyDetailsAll">Select all</span></label>
+        <div class="copy-details-options" id="copy-details-fields"></div>
+      </fieldset>
+      <fieldset>
+        <legend data-i18n="discEditors">Items</legend>
+        <label class="copy-details-all"><input type="checkbox" id="copy-details-all-items"><span data-i18n="copyDetailsAll">Select all</span></label>
+        <div class="copy-details-options" id="copy-details-items"></div>
+      </fieldset>
+    </div>
+    <div class="actions"><button type="button" class="btn" id="copy-details-apply" data-i18n="copyDetailsApply">Apply</button></div>
+  </section>
+</div>
+
 <div class="overlay" id="win-cd-unsaved" hidden>
   <section class="panel narrow" role="dialog" aria-modal="true" aria-labelledby="cd-unsaved-h">
     <div class="panel-head"><h2 id="cd-unsaved-h" data-i18n="cdUnsavedHead">Save your changes?</h2></div>
@@ -2700,6 +2752,14 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   var MEDIA = ["cd", "vinyl", "cassette", "sacd", "dvd", "bluray", "other"];
   var SHELF_MEDIA = ["cd", "vinyl", "cassette", "sacd", "dvd-bluray", "other"];
   var MEDIUM_FIELDS = { recordSize: ["vinyl"], recordSpeed: ["vinyl"], recordColour: ["vinyl"], matrixRunout: MEDIA.slice(), tapeType: ["cassette"], noiseReduction: ["cassette"], sacdHybrid: ["sacd"], audioPrograms: ["sacd", "dvd", "bluray"] };
+  var CD_PRESSING_FIELDS = ["ifpiMastering", "ifpiMould", "hub"];
+  function detailFitsMedium(field, medium) {
+    var types = MEDIUM_FIELDS[field];
+    return types ? types.indexOf(medium) >= 0 : CD_PRESSING_FIELDS.indexOf(field) < 0 || medium === "cd" || medium === "sacd";
+  }
+  Object.assign(I18N.en, { copyDetails: "Apply to other items", copyDetailsHint: "Selected values replace matching details in the chosen items. Save the set to keep the changes.", copyDetailsAll: "Select all", copyDetailsApply: "Apply", detailsCopied: "Details copied to the selected item drafts" });
+  Object.assign(I18N.ja, { copyDetails: "他のメディアに適用", copyDetailsHint: "選んだ値で、対象メディアの該当項目を置き換えます。変更を確定するにはセットを保存してください。", copyDetailsAll: "すべて選択", copyDetailsApply: "適用", detailsCopied: "選択したメディアの下書きに詳細をコピーしました" });
+  Object.assign(I18N.zh, { copyDetails: "应用到其他媒介", copyDetailsHint: "选中的信息将替换目标媒介中的对应项目。保存套装后，修改才会生效。", copyDetailsAll: "全选", copyDetailsApply: "应用", detailsCopied: "详情已复制到选中媒介的草稿" });
   var MEDIA_TEXT = {
     en: { medium: "Medium", mediumName: "Medium name", allCds: "All media", libraryHead: "Collection", mediumOther: "Other media", mediumFilter: "Filter other media", mediumAny: "All other media", mediaEmpty: "No releases here yet.",
       "medium.cd": "CD", "medium.vinyl": "Vinyl", "medium.cassette": "Cassette", "medium.sacd": "SACD", "medium.dvd": "DVD", "medium.bluray": "Blu-ray", "medium.usb": "USB", "medium.sd": "SD card", "medium.other": "Other",
@@ -2797,8 +2857,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   }
   function updateMediaEditor() {
     var m = $("medium").value || "cd"; $("medium-name-field").hidden = m !== "other";
-    Object.keys(MEDIUM_FIELDS).forEach(function (f) { $(f).parentElement.hidden = MEDIUM_FIELDS[f].indexOf(m) < 0; });
-    ["ifpiMastering", "ifpiMould", "hub"].forEach(function (f) { $(f).closest(".field").hidden = ["cd", "sacd"].indexOf(m) < 0; });
+    Object.keys(MEDIUM_FIELDS).concat(CD_PRESSING_FIELDS).forEach(function (f) { $(f).closest(".field").hidden = !detailFitsMedium(f, m); });
     var cd = { medium:m, mediumName:$("mediumName").value.trim() };
     $("albumOverall").querySelector("summary > span").textContent = formMusicOnly ? t("musicInformation") : mediumSection(cd, false);
     $("albumOverall").querySelector("[data-i18n=workInheritHint]").textContent = t(formMusicOnly ? "musicInheritHint" : "workInheritHint");
@@ -3283,6 +3342,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     stack.push(id);
     document.body.style.overflow = "hidden";
     ov.querySelector(".panel").scrollTop = 0;
+    if (id === "cd" && activeDiscEntry()) revealDiscTab(activeDiscEntry().id);
     var first = (id === "cd" && formMusicOnly && $("form-audio-add")) || ov.querySelector("[data-autofocus]") || ov.querySelector("button, input, select");
     if (first) first.focus({ preventScroll: true });
   }
@@ -3296,6 +3356,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (id === "cd" && ((discSession && discSession.saving) || (formAudio && formAudio.saving))) return;
     if (id === "cd" && !force && cdFormDirty()) { openWin("cd-unsaved"); return; }
     if (id === "cd") stopCamera();
+    if (id === "copy-details") detailCopy = null;
     if (id === "firstsync" && firstSync.resolve) { var ask = firstSync.resolve; firstSync.resolve = null; setTimeout(function () { ask("signout"); }, 0); }
     if (id === "cd") { clearForm(); renderAll(); }
     if (id === "album") resetAlbumDlg();
@@ -7879,12 +7940,33 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (sharedTitle !== null) $("title").value = sharedTitle;
     sideRenameOpen = "";
     applyMode(); captureDiscEntry();
-    if (focus && $("disc-tab-" + id)) $("disc-tab-" + id).focus({ preventScroll: true });
+    if (entry.detailCopies) {
+      Object.keys(entry.detailCopies).forEach(function (field) {
+        $(field).value = entry.detailCopies[field];
+        $(field).classList.remove("filled");
+      });
+      entry.detailCopies = null;
+      $("more-details").open = true;
+      captureDiscEntry();
+      updateCopyDetailsButton();
+    }
+    if (focus && $("disc-tab-" + id)) {
+      revealDiscTab(id);
+      $("disc-tab-" + id).focus({ preventScroll: true });
+    }
+  }
+  function revealDiscTab(id) {
+    var button = $("disc-tab-" + id), list = $("form-disc-tabs");
+    if (!button || $("form-disc-tools").hidden) return;
+    var row = button.parentElement.getBoundingClientRect(), bounds = list.getBoundingClientRect();
+    if (row.top < bounds.top) list.scrollTop += row.top - bounds.top;
+    else if (row.bottom > bounds.bottom) list.scrollTop += row.bottom - bounds.bottom;
   }
   function renderDiscButtons() {
     var tabs = $("form-disc-tabs"); if (!tabs) return;
     $("form-disc-tools").hidden = !formSetId || !$("set-choice").value;
     var keep = tabs.contains(document.activeElement) ? document.activeElement.id : "";
+    var scroll = tabs.scrollTop;
     tabs.textContent = "";
     var entries = discSession ? discSession.entries.filter(function (e) { return e.include; }).slice().sort(function (a,b) { return a.number-b.number; }) : [{ id: "initial", number: formDiscNumber }];
     var draftItems = entries.map(function (e) {
@@ -7896,13 +7978,14 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       var draftItem = draftItems[i];
       var group = el("div", "item-tab"), name = draftItemName(entry);
       group.classList.toggle("is-active", !!discSession && discSession.active === entry.id);
-      var b = el("button", "segment-select", name || itemLabel(draftItem, draftItems)); b.type = "button"; b.id = "disc-tab-" + entry.id;
+      var b = el("button", "segment-select"); b.type = "button"; b.id = "disc-tab-" + entry.id;
+      b.appendChild(el("span", "item-tab-name", name || itemLabel(draftItem, draftItems)));
       b.setAttribute("aria-pressed", !discSession || discSession.active === entry.id ? "true" : "false");
       b.setAttribute("aria-controls", "albumOverall works-set more-details form-audio-set"); b.disabled = discEditorBusy();
       if (name) b.appendChild(el("small", "item-medium-badge", mediumText(draftItem)));
       b.addEventListener("click", function () { itemEditorOpen = ""; activateDiscEntry(entry.id, true); renderDiscButtons(); });
       b.addEventListener("keydown", function (e) {
-        var step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+        var step = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key];
         if (step) { e.preventDefault(); activateDiscEntry(entries[(i + step + entries.length) % entries.length].id, true); }
       }); group.appendChild(b);
       var edit = el("button", "segment-action item-edit", "✎"); edit.type = "button"; edit.id = "disc-edit-" + entry.id; edit.title = t("editItem"); edit.setAttribute("aria-label", t("editItem") + ": " + (name || itemLabel(draftItem, draftItems))); edit.setAttribute("aria-expanded", String(itemEditorOpen === entry.id)); edit.setAttribute("aria-controls", "item-editor"); edit.disabled = discEditorBusy();
@@ -7913,11 +7996,13 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     qsa("#lookup-disc-choices input, #lookup-select-all").forEach(function (node) { node.disabled = discEditorBusy(); });
     var current = activeDiscEntry();
     $("form-remove-disc").hidden = !current || entries.length < 2;
-    $("form-remove-disc").textContent = t("discDelete");
     $("form-remove-disc").disabled = discEditorBusy();
+    $("copy-details").hidden = $("form-disc-tools").hidden;
+    updateCopyDetailsButton();
     qsa("#vinyl-sides input, #vinyl-sides button").forEach(function (node) { node.disabled = discEditorBusy() || node.classList.contains("side-remove") && formSides.length < 2; });
     $("item-name").disabled = discEditorBusy(); $("item-editor-done").disabled = discEditorBusy();
     renderSetMedia();
+    tabs.scrollTop = scroll;
     if (keep && $(keep)) $(keep).focus({preventScroll:true});
   }
   var itemEditorOpen = "";
@@ -7965,6 +8050,100 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (!entry.existing && entry.snapshot && entry.snapshot.audio) cleanDraftAudio(entry.snapshot.audio.copied);
     if (entry.lookupDisc) qsa("#lookup-disc-choices input").forEach(function (box) { if (+box.value === entry.lookupDisc) box.checked = false; });
     renderDiscButtons(); renderLookupDiscPreview();
+  });
+  var detailCopy = null;
+  function detailCopyInputs() {
+    return qsa("input[id], textarea[id]", $("more-details")).filter(function (input) {
+      return input.value.trim() && detailFitsMedium(input.id, $("medium").value);
+    });
+  }
+  function updateCopyDetailsButton() {
+    var button = $("copy-details");
+    button.disabled = button.hidden || discEditorBusy() || !discSession ||
+      discSession.entries.filter(function (entry) { return entry.include; }).length < 2 || !detailCopyInputs().length;
+  }
+  function detailCopyMedium(entry) {
+    return entry.snapshot ? entry.snapshot.fields.medium.value : mediumGroup(entry.data);
+  }
+  function detailCopyChoices(id, choices) {
+    var list = $("copy-details-" + id);
+    list.textContent = "";
+    list.scrollTop = 0;
+    choices.forEach(function (choice) {
+      var label = el("label"), check = el("input");
+      check.type = "checkbox"; check.value = choice.id; check.checked = true;
+      label.appendChild(check);
+      label.appendChild(el("span", null, choice.label));
+      list.appendChild(label);
+    });
+  }
+  function detailCopySelection(id) {
+    var boxes = qsa("input", $("copy-details-" + id));
+    var checked = boxes.filter(function (box) { return box.checked; });
+    var all = $("copy-details-all-" + id);
+    all.checked = checked.length === boxes.length;
+    all.indeterminate = checked.length > 0 && !all.checked;
+    return checked.map(function (box) { return box.value; });
+  }
+  function updateDetailCopySelection() {
+    var fields = detailCopySelection("fields"), items = detailCopySelection("items");
+    $("copy-details-apply").disabled = !detailCopy || !detailCopy.items.some(function (entry) {
+      return entry.include && items.indexOf(entry.id) >= 0 &&
+        fields.some(function (field) { return detailFitsMedium(field, detailCopyMedium(entry)); });
+    });
+    return { fields: fields, items: items };
+  }
+  ["fields", "items"].forEach(function (id) {
+    $("copy-details-" + id).addEventListener("change", updateDetailCopySelection);
+    $("copy-details-all-" + id).addEventListener("change", function () {
+      var checked = this.checked;
+      qsa("input", $("copy-details-" + id)).forEach(function (box) { box.checked = checked; });
+      updateDetailCopySelection();
+    });
+  });
+  $("copy-details").addEventListener("click", function () {
+    if (discEditorBusy() || !formSetId || !activeDiscEntry()) return;
+    var source = activeDiscEntry(), values = {};
+    var fields = detailCopyInputs().map(function (input) {
+      values[input.id] = input.value;
+      return { id: input.id, label: input.labels[0].textContent };
+    });
+    if (!fields.length) return;
+    var items = discSession.entries.filter(function (entry) { return entry.include && entry !== source; })
+      .sort(function (a, b) { return a.number - b.number; });
+    if (!items.length) return;
+    detailCopy = { source: source, values: values, items: items };
+    detailCopyChoices("fields", fields);
+    detailCopyChoices("items", items.map(function (entry) {
+      var tab = $("disc-tab-" + entry.id);
+      var name = tab.firstChild.textContent;
+      return { id: entry.id, label: draftItemName(entry) ? entry.number + " · " + name : name };
+    }));
+    updateDetailCopySelection();
+    openWin("copy-details");
+  });
+  $("more-details").addEventListener("input", updateCopyDetailsButton);
+  $("close-copy-details").addEventListener("click", function () { closeWin("copy-details"); });
+  $("copy-details-apply").addEventListener("click", function () {
+    if (!detailCopy || detailCopy.source !== activeDiscEntry() || !formSetId || discEditorBusy()) return;
+    var selected = updateDetailCopySelection(), copied = false;
+    detailCopy.items.forEach(function (entry) {
+      if (!entry.include || selected.items.indexOf(entry.id) < 0) return;
+      var fields = entry.snapshot && entry.snapshot.fields;
+      var medium = detailCopyMedium(entry);
+      var pending = entry.detailCopies || {};
+      selected.fields.forEach(function (field) {
+        if (!detailFitsMedium(field, medium)) return;
+        var value = detailCopy.values[field];
+        var original = fields ? fields[field].value : field === "hub" ? hubText(entry.data.hub) :
+          String(entry.data[field] || (field === "releaseYear" && entry.data.year) || "");
+        if (value === original) delete pending[field]; else pending[field] = value;
+        copied = true;
+      });
+      entry.detailCopies = Object.keys(pending).length ? pending : null;
+    });
+    closeWin("copy-details");
+    if (copied) toast(t("detailsCopied"));
   });
   function translateSetForm() {
     qsa("#set-choice option").forEach(function (o) {
@@ -8069,7 +8248,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     captureDiscEntry();
     return JSON.stringify({ quantity: $("collection-quantity").value, set: [$("set-choice").value, formSetId, $("title").value, $("set-total").value],
       discs: discSession ? discSession.entries.map(function (e) {
-        return [e.id, e.number, e.include, e.fingerprint !== e.initialFingerprint ? e.fingerprint : null];
+        return [e.id, e.number, e.include, e.fingerprint !== e.initialFingerprint ? e.fingerprint : null, e.detailCopies || null];
       }) : singleDiscSnapshot() });
   }
   function rememberCdForm() {
@@ -10923,7 +11102,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     for (var i = 0; i < entries.length; i++) {
       var entry = entries[i];
       var membershipChanged = (releaseSet(entry.data) ? entry.data.set.id : "") !== formSetId;
-      if (entry.existing && !membershipChanged && entry.id !== original && (!entry.snapshot || entry.fingerprint === entry.initialFingerprint)) continue;
+      if (entry.existing && !membershipChanged && entry.id !== original && !entry.detailCopies && (!entry.snapshot || entry.fingerprint === entry.initialFingerprint)) continue;
       activateDiscEntry(entry.id, false);
       var candidate = readDiscCandidate();
       if (!candidate) return;

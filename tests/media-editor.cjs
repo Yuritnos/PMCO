@@ -589,6 +589,64 @@ async function main() {
       assert.deepEqual(await page.locator('#recordColour-options option').evaluateAll(ns=>ns.map(n=>n.value)),['Black vinyl','Coloured vinyl','Clear vinyl','Red vinyl','Blue vinyl']);
     } finally {await f.close();}
   });
+  await test('set details copy stays in drafts and respects selected fields, items, and media',async()=>{
+    const discs=['vinyl','cd','vinyl','vinyl'].map((medium,index)=>({
+      id:'copy-'+index,title:'Details copy set',medium,set:{id:'details-copy',title:'Details copy set',disc:index+1,total:4},
+      label:'Label '+index,notes:'Note '+index,recordSpeed:index===0?'33⅓':'45',
+      works:[{title:'Work '+index,tracks:[]}]
+    }));
+    const f=await fixture({extra:discs}),{page,state}=f;
+    try {
+      await page.evaluate(cd=>mediaQA.startEdit(cd),discs[0]);
+      const picker=page.locator('#win-copy-details');
+      await page.locator('#copy-details').click();
+      assert.deepEqual(await picker.locator('#copy-details-fields input:checked').evaluateAll(inputs=>inputs.map(i=>i.value)),['label','recordSpeed','notes']);
+      assert.equal(await picker.locator('#copy-details-items input:checked').count(),3);
+      await page.keyboard.press('Escape');
+      assert.equal(await page.evaluate(()=>mediaQA.cdFormDirty()),false);
+      await page.locator('#copy-details').click();
+      await picker.locator('#copy-details-fields input[value=notes]').uncheck();
+      await picker.locator('#copy-details-items input[value=copy-3]').uncheck();
+      await page.locator('#copy-details-apply').click();
+      assert.equal(await page.evaluate(()=>mediaQA.cdFormDirty()),true);
+      assert.deepEqual(state.doc.cds.filter(cd=>cd.set?.id==='details-copy'),discs);
+      await page.locator('#disc-tab-copy-2').click();
+      assert.equal(await page.locator('#recordSpeed').inputValue(),'33⅓');
+      assert.equal(await page.locator('#notes').inputValue(),'Note 2');
+      await save(page);
+      const saved=state.doc.cds.filter(cd=>cd.set?.id==='details-copy');
+      assert.deepEqual(saved.map(cd=>cd.label),['Label 0','Label 0','Label 0','Label 3']);
+      assert.deepEqual(saved.map(cd=>cd.recordSpeed),['33⅓','45','33⅓','45']);
+      assert.deepEqual(saved.map(cd=>cd.notes),discs.map(cd=>cd.notes));
+      assert.deepEqual(saved.map(cd=>cd.works.map(w=>w.title)),discs.map(cd=>cd.works.map(w=>w.title)));
+    } finally {await f.close();}
+  });
+  await test('set item rail stays at the left and scrolls separately from the editor',async()=>{
+    const discs=Array.from({length:20},(_,index)=>({
+      id:'rail-'+index,title:'Long set',set:{id:'rail',title:'Long set',disc:index+1,total:20},notes:'Notes'
+    }));
+    const f=await fixture({extra:discs}),{page}=f;
+    try {
+      await page.setViewportSize({width:375,height:600});
+      await page.evaluate(cd=>mediaQA.startEdit(cd),discs[0]);
+      const panel=page.locator('#win-cd .panel');
+      const geometry=await panel.evaluate(node=>{
+        const tools=document.getElementById('form-disc-tools'),tabs=document.getElementById('form-disc-tabs');
+        const form=document.getElementById('cd-form');
+        node.scrollTop=220;
+        const first=tools.getBoundingClientRect(),outer=node.getBoundingClientRect();
+        node.scrollTop=400;
+        const second=tools.getBoundingClientRect(),scroll=node.scrollTop;
+        tabs.scrollTop=120;
+        return {left:second.right<=form.getBoundingClientRect().left, visible:second.top>=outer.top&&second.bottom<=outer.bottom,
+          fixed:Math.abs(first.top-second.top)<1, separate:tabs.scrollTop>0&&node.scrollTop===scroll,
+          overflow:node.scrollWidth>node.clientWidth+1};
+      });
+      assert.deepEqual(geometry,{left:true,visible:true,fixed:true,separate:true,overflow:false});
+      assert(await page.locator('#form-add-disc').isVisible());
+      assert(await page.locator('#form-remove-disc').isVisible());
+    } finally {await f.close();}
+  });
   await test('item editors and undivided work positions fit all locales/themes at desktop and narrow widths',async()=>{
     const f=await fixture(),{page}=f;
     try {
