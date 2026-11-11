@@ -273,6 +273,7 @@ async function main(){
   const f=await fixture({native:true}),{page}=f;
   try{
    await editor(page);
+   await page.locator('.split-point').first().click();assert(await page.locator('#split-point-row').isVisible());assert.equal(await page.locator('#split-point-time').inputValue(),'3:00.000');
    for(const zoom of [1,2,4,8,16,32]){
     if(zoom>1)await page.locator('#split-zoom-in').click();
     await page.locator('#split-scroll').evaluate(n=>n.scrollLeft=n.scrollWidth*.27);

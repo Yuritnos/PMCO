@@ -9759,7 +9759,7 @@ function renderSplit() {
       point.addEventListener("pointerdown",function(e){
         if(e.button!==0||ed.writing)return;e.preventDefault();var old=splitSnapshot(ed),start=e.clientX,width=timeline.getBoundingClientRect().width,moved=false;
         function move(ev){moved=true;ed.parts=clone(old.parts);ed.point=i;splitPointMove(ed,i,old.parts[i].end+Math.round((ev.clientX-start)/width*total));renderSplit();}
-        function finish(){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);if(moved){ed.undo.push(old);ed.redo=[];}renderSplit();}
+        function finish(){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);if(moved){ed.undo.push(old);ed.redo=[];renderSplit();}else splitSelectPoint(i);}
         function cancel(){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);splitRestore(ed,old);}
         window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",cancel);
       });band.appendChild(point);
