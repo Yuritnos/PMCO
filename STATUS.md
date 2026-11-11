@@ -2,13 +2,16 @@
 
 Updated: 2026-11-11 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: flat audio storage and confirmed removal — implementation verified (2026-11-11)
+## Current milestone: flat audio storage and confirmed removal — PMCO 0.3.1 build 65 delivered (2026-11-11)
 
 - New ordinary imports, CD extraction and trimming save audio directly in the chosen folder without per-item ID directories. Names use current form metadata: **Album - CD1 - 01 - Track title.flac**; standalone items omit the item label, missing track titles use **Track 01**, and duplicate names get **(2)** / **(3)** without overwriting. Names are fixed at import time. No migration or renaming of earlier audio; old references remain supported.
 - Shared native copying verifies bytes, rolls back only new copies, and records ownership privately in app data. Recovery verifies root, filename, size/hash and creation identity before cleaning unreferenced copies. Exact-file draft/release/sync cleanup preserves the chosen folder, unrelated files, shared references and Undo.
 - Profile audio removal now asks for confirmation. Item/playlist changes persist together before playback/file cleanup; failed saves retain audio and permit retry. The trim toolbar has six icons: Add point, Discard, Keep, Reset, Undo, Redo. Keep uses the owner's selected rectangle-plus icon. Zoom buttons are removed; cursor-centered Ctrl+wheel remains.
 - **144 relevant checks passed**: 40 native, 11 flat audio/removal, 19 timeline/navigation, 38 collection integration, 14 persistence/recovery, 7 audio draft and 15 drive import. Three languages, both themes and 360/1280px confirmations/toolbars verified with isolated/mocked data and screenshots. No owner account, library or physical drive used.
-- Pending: commit/push, manually run GitHub Windows build, verify staged NSIS/MSI installers and replace local packages. Current delivered installers remain build 64 until verification succeeds. Version remains 0.3.1; no tags/releases or website publication requested.
+- **PMCO 0.3.1 build 65 delivered.** [Windows CI run 43027425525](https://github.com/Yuritnos/PMCO/actions/runs/43027425525) built **92b80cadae3f4815644a65a1100f3cfa5fefb45d** and passed **40 native tests**.
+- Artifact **13860115025**, ZIP **8,650,521 bytes**, SHA-256 **b754bff485ac6c8baa7a5fe141ba4d454093df432872ab6b46919b46858c1e28**. Both packages passed archive/extraction integrity, PMCO.exe 0.3.1 x64 metadata, MSI upgrade identity, nine matching FLAC resources, three pinned resource hashes and normalized executable equivalence.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (**4,027,513 bytes**, SHA-256 **5BBC44A329DF65A892E234D9E02959FCE640226F63144C30D265AB3BF0C82E53**) and **installers/msi/PMCO_0.3.1_x64_en-US.msi** (**4,841,472 bytes**, SHA-256 **712AD1116977424AD04E5F096FBA651664A5489B6F1F5867C798ADEB43EB0791**). Both final files match staging and have verified Medium integrity labels.
+- Build 64 installers/source are archived in **installers/rollback-before-flat-audio-20261111/**. Evidence: **installers/staging-0.3.1-43027425525/**. Version remains 0.3.1; no tag/release, website publication, hosted database change or installed-app launch. Prior unrelated local files remain untouched. Native picker/installed WebView2 checks remain manual; behavior and validation details are in **docs/improvements-34-35.md**.
 
 ## Previous milestone: timeline/navigation refinements — PMCO 0.3.1 build 64 delivered (2026-11-11)
 
