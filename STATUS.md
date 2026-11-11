@@ -2,7 +2,14 @@
 
 Updated: 2026-11-11 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: improvements 3.4 and 3.5 — PMCO 0.3.1 build 62 delivered (2026-11-11)
+## Current milestone: timeline/navigation refinements verified; Windows build pending (2026-11-11)
+
+- Replaced narrow navigation with six SVG icon entrances and one horizontally scrolling child row at a time. All media and All music each expose All plus six media icons; Favorites/Playlists retain named tooltip entries and create/edit actions. Statistics and Settings open directly. Desktop navigation and collection/music behavior remain intact.
+- Timeline tools use eight localized icons in one row, without Select all or Preview selection buttons. Ruler/audio-strip click and drag scrub the playhead; double-click adds a cut. Alt+drag preserves group movement. Boundary lines and downward triangle tips are centered on the actual sample boundary. Ctrl+wheel preserves the time under the pointer while zooming. The strip is 12 CSS pixels slimmer. Audio draft delete buttons align with their track selector row.
+- Verified 19 updated/new UI checks, 18 physical-media checks and 38 integration checks (75 frontend checks), with three languages, both themes, 360–1280px layouts, long icon rows, keyboard navigation, seek/point/group pointer operations, 1–32× alignment and cursor-anchored zoom. Screenshots visually inspected. Tests use isolated/mocked files and services only; native code and storage behavior are unchanged.
+- Next: commit/push this revision, manually dispatch build-windows.yml, verify staged NSIS/MSI, archive build 62 packages/source, and replace local installers. Keep version 0.3.1; no website publication or hosted database change.
+
+## Previous milestone: improvements 3.4 and 3.5 — PMCO 0.3.1 build 62 delivered (2026-11-11)
 
 - Implemented the requirements from the owner's 3.4 optimized specification and 3.5 document. Narrow windows use a 44px sticky navigation bar and scrollable menus; desktop navigation and shelf tools retain their behavior. All seven media expose free-text Media condition with fixed grade suggestions. CD pairs it with hub manufacturing; SACD hides hub while preserving saved values. Condition participates in drafts, details, copy, JSON/CSV and existing metadata sync, and is excluded from lookup-owned values and card/filter/statistic choices.
 - Replaced folder audio import with WAV/FLAC trimming. One timeline handles retained/discarded regions, selection, group movement, draggable/precise boundaries, preview, 1–32× zoom, Undo/Redo and confirmed reset/discard/write. Native splitting uses bounded reads or the pinned FLAC encoder, validates retained sample counts, supports progress/cancellation, and stages files before draft adoption. Recovery manifests preserve referenced audio and backups. No lossy decoder dependency was added.

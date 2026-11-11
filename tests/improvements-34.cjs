@@ -87,31 +87,40 @@ async function editor(page,durations=['3:00','4:00','5:00'],audio=[]){
 async function acceptWrite(page){await page.locator('#split-confirm').click();await page.locator('#split-ask-yes').click();await page.locator('#win-split').waitFor({state:'hidden'});}
 async function main(){
  browser=await playwright.chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
- await test('A: compact navigation stays one row and sticky at all specified widths in three languages',async()=>{
+ await test('A: six icon entrances and one child row fit every specified width and language while sticky',async()=>{
   const f=await fixture({native:true,extra:Array.from({length:50},(_,i)=>({id:'nav'+i,title:'Shelf '+i}))}),{page}=f;
   try{
    for(const lang of ['en','ja','zh'])for(const width of [860,760,640,480,360]){
     await page.setViewportSize({width,height:700});await page.evaluate(l=>mediaQA.setLang(l,false),lang);
     const rect=await page.locator('.side').boundingBox();assert(rect.height>=40&&rect.height<=48);
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    assert.equal(await page.locator('#compact-nav button').count(),6);assert.equal(await page.locator('#compact-nav').textContent(),'');
+    assert(await page.locator('#compact-nav button').evaluateAll(ns=>ns.every(n=>n.querySelector('svg')&&n.title&&n.getAttribute('aria-label')&&n.getBoundingClientRect().width>=36)));
     await page.evaluate(()=>scrollTo(0,600));assert((await page.locator('.side').boundingBox()).y>=-1);
-    await page.locator('#compact-current').click();assert(await page.locator('#albums').isVisible());
-    await page.locator('#compact-current').press('Escape');assert(await page.locator('#albums').isHidden());
-    await page.locator('#compact-more').click();await page.locator('#open-stats').click();assert(await page.locator('#win-stats').isVisible());await page.locator('#close-stats').click();
-    await page.locator('#compact-more').click();await page.locator('#open-settings').click();assert(await page.locator('#win-settings').isVisible());await page.locator('#close-settings').click();
+    await page.locator('#compact-media').click();assert.equal(await page.locator('#compact-subnav button').count(),7);assert.equal(await page.locator('#compact-subnav').textContent(),'');
+    await page.locator('#compact-favorite').click();assert.equal(await page.locator('#compact-nav [aria-expanded=true]').count(),1);assert((await page.locator('#compact-subnav').boundingBox()).height<=48);
+    await page.keyboard.press('Escape');assert(await page.locator('#compact-subnav').isHidden());
+    await page.locator('#compact-stats').click();assert(await page.locator('#win-stats').isVisible());await page.locator('#close-stats').click();
+    await page.locator('#compact-settings').click();assert(await page.locator('#win-settings').isVisible());await page.locator('#close-settings').click();
    }
    await page.setViewportSize({width:1280,height:900});assert(await page.locator('.compact-nav').isHidden());assert(await page.locator('#albums').isVisible());
   }finally{await f.close();}
  });
- await test('A: keyboard navigation, current item, scrolling favorites and outside close preserve shelf tools',async()=>{
+ await test('A: keyboard access, many favorites/playlists and icon music filters preserve queue and current view',async()=>{
   const f=await fixture({native:true}),{page,state}=f;
   try{
-   state.doc.meta.albums=Array.from({length:40},(_,i)=>({id:'fav'+i,name:'Favorite '+i,cdIds:['old']}));await page.reload();await page.locator('#card-old').waitFor();await page.setViewportSize({width:360,height:700});
-   await page.locator('#compact-current').focus();await page.keyboard.press('ArrowDown');await page.locator('#chip-all').press('ArrowRight');
-   await page.locator('[id="chip-media:vinyl"]').click();assert((await page.locator('#compact-current').textContent()).includes('Vinyl'));assert(await page.locator('#albums').isHidden());assert(await page.locator('#card-m3').isVisible());
-   await page.locator('#compact-current').click();await page.locator('#fav-head').click();assert(await page.locator('#albums').evaluate(n=>n.scrollHeight>n.clientHeight));await page.locator('#chip-fav39').click();assert((await page.locator('#compact-current').textContent()).includes('Favorite 39'));
-   await page.locator('#compact-more').focus();await page.keyboard.press('ArrowDown');assert(await page.locator('#open-stats').evaluate(n=>n===document.activeElement));await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert(await page.locator('#win-settings').isVisible());await page.keyboard.press('Escape');
-   await page.locator('#compact-current').click();await page.mouse.click(4,680);assert(await page.locator('#albums').isHidden());
+   state.doc.meta.albums=Array.from({length:40},(_,i)=>({id:'fav'+i,name:'Favorite '+i,cdIds:['old']}));
+   state.doc.meta.playlists=Array.from({length:20},(_,i)=>({id:'list'+i,name:'Playlist '+i,items:[]}));
+   state.doc.cds.forEach(cd=>cd.audio=[{file:cd.id+'/saved.wav',name:'Saved.wav',track:1}]);
+   await page.reload();await page.locator('#card-old').waitFor();await page.setViewportSize({width:360,height:700});
+   await page.locator('#compact-media').focus();await page.keyboard.press('ArrowDown');assert(await page.locator('#compact-choice-all').evaluate(n=>n===document.activeElement));
+   await page.locator('[id="compact-choice-media:vinyl"]').click();assert(await page.locator('#card-m3').isVisible());assert.equal(await page.locator('#compact-media').getAttribute('aria-pressed'),'true');
+   await page.locator('#compact-favorite').click();assert(await page.locator('#compact-subnav').evaluate(n=>n.scrollWidth>n.clientWidth));await page.locator('#compact-choice-fav39').click();assert.equal(await page.locator('#compact-choice-fav39').getAttribute('aria-pressed'),'true');await page.locator('#compact-new-favorite').click();await page.keyboard.press('Escape');assert(await page.locator('#compact-favorite').evaluate(n=>n===document.activeElement));
+   await page.locator('#compact-playlist').click();assert.equal(await page.locator('#compact-subnav').textContent(),'');await page.locator('[id="compact-choice-pl:list19"]').click();assert.equal(await page.locator('#compact-playlist').getAttribute('aria-pressed'),'true');await page.locator('#compact-new-playlist').click();await page.keyboard.press('Escape');assert(await page.locator('#compact-playlist').evaluate(n=>n===document.activeElement));
+   await page.locator('#compact-music').click();assert.equal(await page.locator('#compact-subnav button').count(),7);await page.locator('#compact-choice-music').click();await page.evaluate(()=>mediaQA.playId('old'));const queue=await page.evaluate(()=>mediaQA.queue()),entry=await page.evaluate(()=>mediaQA.currentEntry());
+   await page.locator('[id="compact-choice-music:cd"]').click();assert.equal(await page.locator('#grid .card').count(),2);assert.deepEqual(await page.evaluate(()=>mediaQA.queue()),queue);assert.deepEqual(await page.evaluate(()=>mediaQA.currentEntry()),entry);
+   await page.locator('#compact-music').focus();await page.keyboard.press('ArrowRight');assert(await page.locator('#compact-playlist').evaluate(n=>n===document.activeElement));await page.keyboard.press('Escape');assert(await page.locator('#compact-subnav').isHidden());
+   await page.locator('#compact-favorite').click();await page.mouse.click(4,680);assert(await page.locator('#compact-subnav').isHidden());
   }finally{await f.close();}
  });
  await test('B: condition saves and reopens for seven media, exports, and never accepts online lookup values',async()=>{
@@ -172,7 +181,7 @@ async function main(){
    await page.locator('#split-drop').click();assert.equal(await page.locator('.split-part.is-gap').count(),3);assert((await page.locator('#split-summary').textContent()).includes('0 files'));
    await page.keyboard.press('Control+z');assert.equal(await page.locator('.split-part.is-gap').count(),1);await page.keyboard.press('Control+Shift+z');assert.equal(await page.locator('.split-part.is-gap').count(),3);
    await page.locator('#split-keep').click();assert.equal(await page.locator('.split-part.is-gap').count(),1);
-   await page.locator('#split-select-all').click();assert.equal(await page.locator('.split-part.is-selected').count(),3);
+   await page.keyboard.press('Control+a');assert.equal(await page.locator('.split-part.is-selected').count(),3);
    await page.locator('.split-part').first().click();await page.locator('.split-part').last().click({modifiers:['Shift']});assert.equal(await page.locator('.split-part.is-selected').count(),3);
    await page.locator('#split-close').click();await page.locator('#split-ask-no').click();assert(await page.locator('#win-split').isVisible());await page.locator('#split-close').click();await page.locator('#split-ask-yes').click();await page.locator('#win-split').waitFor({state:'hidden'});assert.equal(f.state.copied.size,0);assert(await page.locator('#form-audio-split').evaluate(n=>n===document.activeElement));
   }finally{await f.close();}
@@ -201,7 +210,7 @@ async function main(){
   const f=await fixture({native:true}),{page}=f;
   try{
    await editor(page);await page.locator('.split-part').nth(1).click();const rect=await page.locator('.split-part').nth(1).boundingBox();
-   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+20,rect.y+rect.height/2,{steps:4});await page.mouse.up();
+   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.keyboard.down('Alt');await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+20,rect.y+rect.height/2,{steps:4});await page.mouse.up();await page.keyboard.up('Alt');
    const shifted=await page.evaluate(()=>{const ed=mediaQA.getSplit();return ed.parts.find(p=>ed.selected.has(p.id));});assert(shifted.start>180000);assert.equal(shifted.end-shifted.start,240000);
    await page.locator('#split-undo').click();const point=page.locator('.split-point').first(),pr=await point.boundingBox();await page.mouse.move(pr.x+pr.width/2,pr.y+4);await page.mouse.down();await page.mouse.move(pr.x+pr.width/2+15,pr.y+4,{steps:4});await page.mouse.up();assert(await page.evaluate(()=>mediaQA.getSplit().parts[0].end>180000));
    await page.locator('.split-point').first().focus();const before=await page.evaluate(()=>mediaQA.getSplit().parts[0].end);await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>mediaQA.getSplit().parts[0].end),before+2);
@@ -235,6 +244,54 @@ async function main(){
   try{
    await page.evaluate(()=>mediaQA.startEdit({id:'old',title:'Bad source'}));await page.locator('#form-audio-set').evaluate(n=>n.open=true);assert.equal(await page.locator('#form-audio-folder').count(),0);state.invalidSplit=true;await page.locator('#form-audio-split').click();assert(await page.locator('#win-split').isHidden());assert.equal(await page.evaluate(()=>mediaQA.getDraft().busy),false);
    await page.evaluate(()=>mediaQA.closeWin('cd',true));await page.locator('#open-settings').click();state.locationResult='C:\\Chosen';await page.locator('#audio-location-choose').click();await until(()=>state.commands.some(c=>c.command==='choose_audio_location'));assert((await page.locator('#audio-location-path').textContent()).includes('Chosen'));const command=state.commands.find(c=>c.command==='choose_audio_location');assert(command.args.prompt.includes('merge'));assert(command.args.no.includes('Switch'));
+  }finally{await f.close();}
+ });
+ await test('refinement: eight localized icon tools stay on one row and audio strip is slimmer',async()=>{
+  const f=await fixture({native:true}),{page}=f;
+  try{
+   for(const lang of ['en','ja','zh'])for(const width of [1280,480,360]){
+    await page.setViewportSize({width,height:900});await page.evaluate(l=>mediaQA.setLang(l,false),lang);await editor(page);
+    assert.equal(await page.locator('#split-select-all,#split-preview').count(),0);assert.equal(await page.locator('.split-toolbar button').count(),8);assert.equal(await page.locator('.split-toolbar').textContent(),'');
+    const geometry=await page.locator('.split-toolbar').evaluate(n=>{const buttons=[...n.children],rects=buttons.map(b=>b.getBoundingClientRect());return {oneRow:rects.every(r=>Math.abs(r.y-rects[0].y)<1),labelled:buttons.every(b=>b.title&&b.getAttribute('aria-label')&&b.querySelector('svg')),fit:n.scrollWidth<=n.clientWidth};});assert.deepEqual(geometry,{oneRow:true,labelled:true,fit:true});
+    const height=(await page.locator('.split-part').first().boundingBox()).height;assert(height>=60&&height<80);
+    await page.locator('#split-close').click();await page.locator('#split-ask-yes').click();await page.locator('#win-split').waitFor({state:'hidden'});await page.evaluate(()=>mediaQA.closeWin('cd',true));
+   }
+  }finally{await f.close();}
+ });
+ await test('refinement: ruler and audio strip click/drag seek without moving segments; double click adds a cut',async()=>{
+  const f=await fixture({native:true}),{page}=f;
+  try{
+   await editor(page);const original=await page.evaluate(()=>mediaQA.getSplit().parts.map(p=>[p.start,p.end,p.keep]));const rect=await page.locator('#split-ruler').boundingBox();
+   await page.mouse.move(rect.x+rect.width*.1,rect.y+16);await page.mouse.down();await page.mouse.move(rect.x+rect.width*.7,rect.y+16,{steps:6});await page.mouse.up();assert(Math.abs(await page.evaluate(()=>mediaQA.getSplit().head)-420000)<1000);
+   const strip=await page.locator('.split-part').first().boundingBox();await page.mouse.click(strip.x+strip.width*.4,strip.y+strip.height/2);assert(Math.abs(await page.evaluate(()=>mediaQA.getSplit().head)-72000)<1000);
+   await page.mouse.move(strip.x+strip.width*.2,strip.y+strip.height/2);await page.mouse.down();await page.mouse.move(strip.x+strip.width*.7,strip.y+strip.height/2,{steps:6});await page.mouse.up();assert(Math.abs(await page.evaluate(()=>mediaQA.getSplit().head)-126000)<1000);
+   assert.deepEqual(await page.evaluate(()=>mediaQA.getSplit().parts.map(p=>[p.start,p.end,p.keep])),original);
+   await page.locator('.split-part').first().dblclick({position:{x:strip.width*.4,y:strip.height/2}});assert.equal(await page.locator('.split-part').count(),4);assert(Math.abs(await page.evaluate(()=>mediaQA.getSplit().parts[0].end)-72000)<1000);
+  }finally{await f.close();}
+ });
+ await test('refinement: centered triangular point indicators match sample boundaries through zoom and scroll',async()=>{
+  const f=await fixture({native:true}),{page}=f;
+  try{
+   await editor(page);
+   for(const zoom of [1,2,4,8,16,32]){
+    if(zoom>1)await page.locator('#split-zoom-in').click();
+    await page.locator('#split-scroll').evaluate(n=>n.scrollLeft=n.scrollWidth*.27);
+    const checks=await page.evaluate(()=>{const ed=mediaQA.getSplit(),timeline=document.getElementById('split-timeline').getBoundingClientRect();return [...document.querySelectorAll('.split-point')].map(n=>{const rect=n.getBoundingClientRect(),i=Number(n.dataset.point);return {error:Math.abs(rect.left+rect.width/2-(timeline.left+timeline.width*ed.parts[i].end/ed.info.frames)),triangle:getComputedStyle(n,'::before').clipPath,lineWidth:getComputedStyle(n,'::after').width};});});assert(checks.every(c=>c.error<.75&&c.triangle.includes('polygon')&&c.triangle.includes('50% 100%')&&c.lineWidth==='2px'));
+   }
+  }finally{await f.close();}
+ });
+ await test('refinement: Ctrl wheel zoom keeps the time under the pointer fixed while already scrolled',async()=>{
+  const f=await fixture({native:true}),{page}=f;
+  try{
+   await editor(page);const original=await page.evaluate(()=>mediaQA.getSplit().parts.map(p=>[p.start,p.end]));
+   async function wheel(fraction,delta,zoom){
+    const rect=await page.locator('#split-scroll').boundingBox(),x=rect.x+rect.width*fraction,y=rect.y+22;
+    const before=await page.evaluate(x=>{const n=document.getElementById('split-timeline').getBoundingClientRect();return (x-n.left)/n.width;},x);
+    await page.mouse.move(x,y);await page.keyboard.down('Control');await page.mouse.wheel(0,delta);await page.keyboard.up('Control');await page.waitForFunction(z=>mediaQA.getSplit().zoom===z,zoom);
+    const after=await page.evaluate(x=>{const n=document.getElementById('split-timeline').getBoundingClientRect();return (x-n.left)/n.width;},x);assert(Math.abs(after-before)<.001);
+   }
+   await wheel(.23,-100,2);await wheel(.77,-100,4);await page.locator('#split-scroll').evaluate(n=>n.scrollLeft=n.clientWidth*1.25);await wheel(.68,100,2);
+   assert.deepEqual(await page.evaluate(()=>mediaQA.getSplit().parts.map(p=>[p.start,p.end])),original);
   }finally{await f.close();}
  });
  await test('visual: split editor is usable in all locales, themes and narrow widths',async()=>{

@@ -59,7 +59,7 @@ async function fixture({native=false, extra=[]}={}) {
   await page.goto('http://media.test/'); await page.locator('#card-old').waitFor();
   return {page,state,close:async()=>{await context.close();assert.deepEqual(state.errors,[]);}};
 }
-const view = async(page,m) => { if(await page.locator('#compact-current').isVisible()&&await page.locator('#compact-current').getAttribute('aria-expanded')==='false')await page.locator('#compact-current').click(); if(await page.locator('#chip-all').getAttribute('aria-expanded')==='false')await page.locator('#chip-all').press('ArrowRight');await page.locator('[id="chip-media:'+m+'"]').click(); };
+const view = async(page,m) => { if(await page.locator('#compact-media').isVisible()){if(await page.locator('#compact-media').getAttribute('aria-expanded')==='false')await page.locator('#compact-media').click();await page.locator('[id="compact-choice-media:'+m+'"]').click();return;} if(await page.locator('#chip-all').getAttribute('aria-expanded')==='false')await page.locator('#chip-all').press('ArrowRight');await page.locator('[id="chip-media:'+m+'"]').click(); };
 async function save(page) { await page.locator('#submit').click(); await page.locator('#win-cd').waitFor({state:'hidden'}); }
 async function main() {
   const executablePath=['C:/Program Files/Google/Chrome/Application/chrome.exe',playwright.chromium.executablePath()].find(fs.existsSync);
@@ -197,9 +197,10 @@ async function main() {
         const geometry=await page.locator('#form-audio').evaluate(box=>{
           const main=box.querySelector('.pa-main').getBoundingClientRect(),row=box.querySelector('li').getBoundingClientRect(),select=box.querySelector('select').getBoundingClientRect();
           const a=box.querySelector('#form-audio-add').getBoundingClientRect(),b=box.querySelector('#form-audio-split').getBoundingClientRect();
-          return {main:main.width,row:row.width,select:select.width,separated:b.top>=a.bottom+4||b.left>=a.right+8,overflow:box.scrollWidth>box.clientWidth+1};
+          const remove=box.querySelector('li > .iconbtn').getBoundingClientRect();
+          return {aligned:Math.abs(remove.top-select.top)<1&&Math.abs(remove.bottom-select.bottom)<1,main:main.width,row:row.width,select:select.width,separated:b.top>=a.bottom+4||b.left>=a.right+8,overflow:box.scrollWidth>box.clientWidth+1};
         });
-        assert(geometry.main>geometry.row/2);assert(geometry.select>150);assert(geometry.separated);assert.equal(geometry.overflow,false);
+        assert(geometry.aligned);assert(geometry.main>geometry.row/2);assert(geometry.select>150);assert(geometry.separated);assert.equal(geometry.overflow,false);
         assert.equal(await page.locator('#form-audio select').inputValue(),'1');
       }
       if(process.env.CDC_QA_ARTIFACTS)await page.screenshot({path:path.join(process.env.CDC_QA_ARTIFACTS,'audio-draft-fixed-mobile.png')});
