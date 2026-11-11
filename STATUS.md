@@ -2,12 +2,16 @@
 
 Updated: 2026-11-11 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: timeline/navigation refinements verified; Windows build pending (2026-11-11)
+## Current milestone: timeline/navigation refinements — PMCO 0.3.1 build 64 delivered (2026-11-11)
 
 - Replaced narrow navigation with six SVG icon entrances and one horizontally scrolling child row at a time. All media and All music each expose All plus six media icons; Favorites/Playlists retain named tooltip entries and create/edit actions. Statistics and Settings open directly. Desktop navigation and collection/music behavior remain intact.
 - Timeline tools use eight localized icons in one row, without Select all or Preview selection buttons. Ruler/audio-strip click and drag scrub the playhead; double-click adds a cut. Alt+drag preserves group movement. Boundary lines and downward triangle tips are centered on the actual sample boundary. Ctrl+wheel preserves the time under the pointer while zooming. The strip is 12 CSS pixels slimmer. Audio draft delete buttons align with their track selector row.
 - Verified 19 updated/new UI checks, 18 physical-media checks and 38 integration checks (75 frontend checks), with three languages, both themes, 360–1280px layouts, long icon rows, keyboard navigation, seek/point/group pointer operations, 1–32× alignment and cursor-anchored zoom. Screenshots visually inspected. Tests use isolated/mocked files and services only; native code and storage behavior are unchanged.
-- Next: commit/push this revision, manually dispatch build-windows.yml, verify staged NSIS/MSI, archive build 62 packages/source, and replace local installers. Keep version 0.3.1; no website publication or hosted database change.
+- Single-clicking an existing cut point now reliably opens its precise-time controls; pointer-up no longer removes the click target before selection. Focused pointer/precision checks passed after this final fix.
+- **PMCO 0.3.1 build 64 delivered.** [Windows CI run 43018765024](https://github.com/Yuritnos/PMCO/actions/runs/43018765024) built **838f3e492f9183981d25d8f0d1d7db7d0f402c04** and passed **34 native tests**. Together with the 75 frontend checks, **109 relevant checks passed**.
+- Artifact **13854007380**, ZIP **8,621,661 bytes**, SHA-256 **8436592106b11488f191a1a827ba1c780de9499b5ab1eb27c6dccc05cc37f2b1**. Both packages passed archive/extraction integrity, PMCO.exe 0.3.1 x64 metadata, MSI upgrade identity, all nine matching FLAC resources, three pinned resource hashes, and normalized executable equivalence.
+- Replaced **installers/nsis/PMCO_0.3.1_x64-setup.exe** (**4,017,562 bytes**, SHA-256 **1FD2FA5CD59D9909FCC7FF0836409E53B0FE3073E4B39E0BB76509ED3D1C723C**) and **installers/msi/PMCO_0.3.1_x64_en-US.msi** (**4,820,992 bytes**, SHA-256 **E4BE738BB4650696EE5814FE7221551220F36C707B2CCB7067A99A4E3A680EC2**). Both final files match staging and have verified Medium integrity labels.
+- Build 62 installers/source are archived in **installers/rollback-before-ui-refinements-20261111/**. Evidence: **installers/staging-0.3.1-43018765024/**. Version remains 0.3.1; no tag/release, website publication, hosted database change or installed-app launch. Prior unrelated local files remain untouched.
 
 ## Previous milestone: improvements 3.4 and 3.5 — PMCO 0.3.1 build 62 delivered (2026-11-11)
 
