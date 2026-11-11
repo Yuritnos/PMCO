@@ -121,7 +121,6 @@ fn flac_cut(job:&Job,part:&Segment,target:&Path,encoder:&Path,done:u64,total:u64
     }
 }
 fn run_job(job:&Job,parts:&[Segment],encoder:&Path)->Result<()> {
-    let _guard=super::AUDIO_IO.try_lock().map_err(|_|"split_busy")?;
     if signature(&job.source)?!=job.signature { return Err("split_changed".into()); }
     fs::create_dir(&job.folder).map_err(|_|IO)?;
     let total=parts.iter().map(|p|p.end-p.start).sum(); let mut done=0;
@@ -173,7 +172,7 @@ pub async fn start_audio_split(app:AppHandle,state:State<'_,SplitState>,id:Strin
     { let mut s=job.status.lock().unwrap(); if !["editing","error","done"].contains(&s.state.as_str()) { return Err("split_busy".into()); } s.state="writing".into(); s.code.clear(); s.progress=0; }
     cleanup(&job); job.cancel.store(false,Ordering::SeqCst);
     std::thread::spawn(move|| {
-        let result=run_job(&job,&segments,&encoder);
+        let result=(|| { let _guard=super::AUDIO_IO.try_lock().map_err(|_|"split_busy")?;run_job(&job,&segments,&encoder) })();
         let mut s=job.status.lock().unwrap();
         match result { Ok(())=>{s.state="done".into();s.progress=100;}, Err(code)=>{s.state=if code==CANCELLED {"cancelled"} else {"error"}.into();s.code=code;cleanup(&job);} }
     }); Ok(())

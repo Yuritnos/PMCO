@@ -9668,8 +9668,8 @@ function renderSplit() {
   $("split-confirm").disabled=ed.writing||!ed.parts.some(function(p){return p.keep;});
   $("split-edit-controls").disabled=ed.writing;$("split-progress").hidden=!ed.writing;$("split-zoom-value").textContent=ed.zoom+"×";
   splitPlayhead();
-  if(focusId){var node=qsa(".split-part",band).find(function(n){return n.dataset.part===focusId;});if(node)node.focus({preventScroll:true});}
-  else if(focusPoint!=null){var pointNode=qsa(".split-point",band).find(function(n){return n.dataset.point===focusPoint;});if(pointNode)pointNode.focus({preventScroll:true});}
+  if(focusId){var node=qsa(".split-part",band).find(function(n){return n.dataset.part===focusId;});if(node)node.focus({preventScroll:true});else $("split-ruler").focus({preventScroll:true});}
+  else if(focusPoint!=null){var pointNode=qsa(".split-point",band).find(function(n){return n.dataset.point===focusPoint;});if(pointNode&&ed.point!=null)pointNode.focus({preventScroll:true});else $("split-ruler").focus({preventScroll:true});}
 }
 function splitSetKeep(keep){splitEdit(function(ed){ed.parts.forEach(function(p){if(ed.selected.has(p.id))p.keep=keep;});});}
 function splitPointMove(ed,index,frame){var min=Math.ceil(ed.info.rate/10),left=ed.parts[index],right=ed.parts[index+1];if(!left||!right)return;frame=Math.round(Math.max(left.start+min,Math.min(right.end-min,frame)));left.end=right.start=frame;}
@@ -9677,7 +9677,7 @@ function splitAddPoint(){var ed=splitEditor;if(!ed)return;var at=Math.round(ed.h
 function splitDeletePoint(){splitEdit(function(ed){var i=ed.point;if(i==null||!ed.parts[i+1])return;var a=ed.parts[i],b=ed.parts[i+1];ed.parts.splice(i,2,splitPart(a.start,b.end,a.keep||b.keep));ed.point=null;ed.selected.clear();});}
 function askSplit(text,action,label){splitConfirmAction=action;$("split-ask-text").textContent=text;$("split-ask-yes").textContent=t(label||"discardChanges");openWin("split-confirm");}
 async function requestSplitClose(){var ed=splitEditor;if(!ed||ed.cancelling)return;askSplit(t(ed.writing?"splitCancelAsk":"splitDiscardAsk"),async function(){ed.cancelling=true;try{await AudioLib.call("cancel_audio_split",{id:ed.info.id});finishSplit();}catch(e){ed.cancelling=false;$("split-status").textContent=t("splitError");}},"splitDiscard");}
-function finishSplit(){var ed=splitEditor;if(!ed)return;var player=$("split-player");player.pause();player.removeAttribute("src");player.load();ed.draft.busy=false;splitEditor=null;closeWin("split",true);renderFormAudio();renderDiscButtons();}
+function finishSplit(){var ed=splitEditor;if(!ed)return;var player=$("split-player");player.pause();player.removeAttribute("src");player.load();ed.draft.busy=false;splitEditor=null;closeWin("split",true);renderFormAudio();renderDiscButtons();if(!$("win-cd").hidden&&$("form-audio-split"))$("form-audio-split").focus({preventScroll:true});}
 async function openAudioSplit(){
   var draft=formAudio;if(!draft||draft.busy||draft.saving||splitEditor)return;
   var works=readWorks();if(!Array.isArray(works)){setErr("works",t("errDuration"));if(works.bad)focusCdError(works.bad);return;}

@@ -174,7 +174,7 @@ async function main(){
    await page.locator('#split-keep').click();assert.equal(await page.locator('.split-part.is-gap').count(),1);
    await page.locator('#split-select-all').click();assert.equal(await page.locator('.split-part.is-selected').count(),3);
    await page.locator('.split-part').first().click();await page.locator('.split-part').last().click({modifiers:['Shift']});assert.equal(await page.locator('.split-part.is-selected').count(),3);
-   await page.locator('#split-close').click();await page.locator('#split-ask-no').click();assert(await page.locator('#win-split').isVisible());await page.locator('#split-close').click();await page.locator('#split-ask-yes').click();await page.locator('#win-split').waitFor({state:'hidden'});assert.equal(f.state.copied.size,0);
+   await page.locator('#split-close').click();await page.locator('#split-ask-no').click();assert(await page.locator('#win-split').isVisible());await page.locator('#split-close').click();await page.locator('#split-ask-yes').click();await page.locator('#win-split').waitFor({state:'hidden'});assert.equal(f.state.copied.size,0);assert(await page.locator('#form-audio-split').evaluate(n=>n===document.activeElement));
   }finally{await f.close();}
  });
  await test('C4: points add, move precisely, reject invalid input, merge and reset with confirmation',async()=>{
@@ -183,7 +183,7 @@ async function main(){
    await editor(page);await page.evaluate(()=>mediaQA.splitSeek(60000,false));await page.locator('#split-add-point').click();assert.equal(await page.locator('.split-part').count(),4);
    await page.locator('.split-point').first().click();await page.locator('#split-point-time').fill('1:05.123');await page.locator('#split-point-time').press('Tab');assert.equal(await page.evaluate(()=>mediaQA.getSplit().parts[0].end),65123);
    await page.locator('#split-point-time').fill('99:99.000');await page.locator('#split-point-time').press('Tab');assert.equal(await page.locator('#split-point-time').inputValue(),'1:05.123');
-   await page.locator('#split-delete-point').click();assert.equal(await page.locator('.split-part').count(),3);await page.locator('#split-undo').click();assert.equal(await page.locator('.split-part').count(),4);
+   await page.locator('.split-point').first().focus();await page.keyboard.press('Delete');assert(await page.locator('#split-ruler').evaluate(n=>n===document.activeElement));assert.equal(await page.locator('.split-part').count(),3);await page.locator('#split-undo').click();assert.equal(await page.locator('.split-part').count(),4);
    await page.locator('#split-reset').click();assert(await page.locator('#win-split-confirm').isVisible());await page.locator('#split-ask-yes').click();assert.equal(await page.locator('.split-part').count(),3);
    await page.locator('#split-zoom-in').click();assert.equal(await page.locator('#split-zoom-value').textContent(),'2×');assert(await page.locator('#split-scroll').evaluate(n=>n.scrollWidth>n.clientWidth));
   }finally{await f.close();}
