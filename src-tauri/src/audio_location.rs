@@ -12,7 +12,7 @@ fn linked(meta: &fs::Metadata) -> bool {
     false
 }
 
-fn regular_path(path: &Path) -> Result<(), String> {
+pub(crate) fn regular_path(path: &Path) -> Result<(), String> {
     for part in path.ancestors() {
         match fs::symlink_metadata(part) {
             Ok(meta) if linked(&meta) => return Err("Choose a folder without links or junctions.".into()),
@@ -34,7 +34,8 @@ pub fn root(data: &Path) -> Result<PathBuf, String> {
             path
         },
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            let path = data.join("audio"); regular_path(&path)?;
+            let legacy = data.join("audio");
+            let path = if legacy.is_dir() { legacy } else { data.join("PMCO Audio") }; regular_path(&path)?;
             fs::create_dir_all(&path).map_err(|_| "Could not create the audio folder.")?; path
         },
         Err(_) => return Err("The audio folder setting could not be read.".into()),
@@ -76,49 +77,66 @@ pub fn copy_file(source: &Path, target: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn relocate<F: FnOnce(&Path) -> Result<(), String>>(data: &Path, parent: &Path, allow: F) -> Result<PathBuf, String> {
-    regular_path(parent)?;
-    let parent = parent.canonicalize().map_err(|_| "Choose an available folder.")?;
-    let source = root(data)?;
-    let target = parent.join("PMCO Audio"); regular_path(&target)?;
-    if source == target { return Ok(source); }
+/// Inspect only the existing managed library. Never follow links during a merge.
+fn inventory(source: &Path) -> Result<Vec<PathBuf>, String> {
+    let mut pending = vec![(source.to_path_buf(), 0usize)]; let mut files = Vec::new(); let mut count = 0;
+    while let Some((dir, depth)) = pending.pop() {
+        for entry in fs::read_dir(dir).map_err(|_| "Could not read the audio library.")? {
+            let entry = entry.map_err(|_| "Could not read the audio library.")?;
+            count += 1; if count > 500_000 { return Err("The audio library has too many files.".into()); }
+            let meta = fs::symlink_metadata(entry.path()).map_err(|_| "Could not read the audio library.")?;
+            if linked(&meta) { return Err("The audio library contains a link or junction.".into()); }
+            if meta.is_dir() {
+                if depth >= 16 { return Err("The audio library has too many nested folders.".into()); }
+                pending.push((entry.path(), depth + 1));
+            } else if meta.is_file() { files.push(entry.path().strip_prefix(source).map_err(|_| "Invalid library path.")?.to_path_buf()); }
+            else { return Err("The audio library contains an unsupported file.".into()); }
+        }
+    }
+    Ok(files)
+}
+pub fn has_files(data: &Path) -> Result<bool, String> { match root(data) { Ok(root)=>Ok(!inventory(&root)?.is_empty()), Err(_)=>Ok(false) } }
+
+pub fn relocate<F: FnOnce(&Path) -> Result<(), String>>(data: &Path, chosen: &Path, merge: bool, allow: F) -> Result<PathBuf, String> {
+    regular_path(chosen)?;
+    let target = chosen.canonicalize().map_err(|_| "Choose an available folder.")?;
+    if !target.is_dir() { return Err("Choose an available folder.".into()); }
+    let source = root(data).ok();
+    if source.as_ref() == Some(&target) { return Ok(target); }
     let data = data.canonicalize().map_err(|_| "Could not read the app folder.")?;
-    if target.starts_with(&source) || source.starts_with(&target) || target.starts_with(&data) || data.starts_with(&target) {
+    if source.as_ref().map(|s| target.starts_with(s) || s.starts_with(&target)).unwrap_or(false) || target.starts_with(&data) || data.starts_with(&target) {
         return Err("Choose a folder outside the current library and app data.".into());
     }
-    if target.exists() {
-        let mut entries = fs::read_dir(&target).map_err(|_| "Choose a folder with an empty PMCO Audio subfolder.")?;
-        if entries.next().is_some() { return Err("Choose a folder with an empty PMCO Audio subfolder.".into()); }
-    }
-    let stamp = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|_| "Could not change the audio folder.")?.as_nanos();
-    let stage = parent.join(format!(".pmco-audio-{stamp}"));
-    fs::create_dir(&stage).map_err(|_| "Could not create the audio folder.")?;
-    let result = (|| {
-        let mut pending = vec![(source.clone(), PathBuf::new(), 0usize)]; let mut count = 0usize;
-        while let Some((dir, rel, depth)) = pending.pop() {
-            for entry in fs::read_dir(dir).map_err(|_| "Could not read the audio library.")? {
-                let entry = entry.map_err(|_| "Could not read the audio library.")?;
-                count += 1; if count > 500_000 { return Err("The audio library has too many files.".into()); }
-                let meta = fs::symlink_metadata(entry.path()).map_err(|_| "Could not read the audio library.")?;
-                if linked(&meta) { return Err("The audio library contains a link or junction.".into()); }
-                let next = rel.join(entry.file_name()); let destination = stage.join(&next);
-                if meta.is_dir() {
-                    if depth >= 16 { return Err("The audio library has too many nested folders.".into()); }
-                    fs::create_dir(&destination).map_err(|_| "Could not copy the audio library.")?;
-                    pending.push((entry.path(), next, depth + 1));
-                } else if meta.is_file() { copy_file(&entry.path(), &destination)?; }
-                else { return Err("The audio library contains an unsupported file.".into()); }
-            }
+    let files = if merge { inventory(source.as_ref().ok_or("The previous audio folder is unavailable.")?)? } else { Vec::new() };
+    let source = source.unwrap_or_default();
+    // Preflight all collisions before creating anything. Existing equal copies can be reused.
+    for rel in &files {
+        let dest = target.join(rel); regular_path(&dest)?;
+        if dest.exists() && (!dest.is_file() || !identical(&source.join(rel), &dest).unwrap_or(false)) { return Err("audio_location_conflict".into()); }
+        let mut parent = dest.parent();
+        while let Some(dir) = parent {
+            if dir == target { break; }
+            if dir.exists() && !dir.is_dir() { return Err("audio_location_conflict".into()); }
+            parent = dir.parent();
         }
-        if target.exists() { fs::remove_dir(&target).map_err(|_| "The destination folder is no longer empty.")?; }
-        fs::rename(&stage, &target).map_err(|_| "Could not finish the audio copy.")?;
+    }
+    let mut copied = Vec::new(); let mut dirs = Vec::new();
+    let result = (|| {
+        for rel in &files {
+            let dest = target.join(rel);
+            if dest.exists() { continue; }
+            let mut missing = Vec::new(); let mut parent = dest.parent();
+            while let Some(dir) = parent { if dir.exists() { break; } missing.push(dir.to_path_buf()); parent = dir.parent(); }
+            for dir in missing.into_iter().rev() { fs::create_dir(&dir).map_err(|_| "Could not copy the audio library.")?; dirs.push(dir); }
+            copy_file(&source.join(rel), &dest)?; copied.push(dest);
+        }
         allow(&target)?;
-        // The complete verified copy exists before changing the local setting.
         super::storage::atomic_write(&data.join(CONFIG), &json!({"path": target}))?;
         Ok(target.clone())
     })();
-    if stage.exists() && stage.parent() == Some(parent.as_path()) && regular_path(&stage).is_ok() {
-        let _ = fs::remove_dir_all(&stage); // Only this invocation's newly-created staging tree.
+    if result.is_err() {
+        for file in copied.into_iter().rev() { let _ = fs::remove_file(file); }
+        for dir in dirs.into_iter().rev() { let _ = fs::remove_dir(dir); }
     }
     result
 }
@@ -131,8 +149,9 @@ mod tests {
         let base = std::env::temp_dir().join(format!("pmco-location-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
         let data = base.join("data"); let dest = base.join("chosen"); fs::create_dir_all(&data).unwrap(); fs::create_dir(&dest).unwrap();
         let old = root(&data).unwrap(); fs::create_dir(old.join("disc")).unwrap(); fs::write(old.join("disc/test.flac"), b"audio fixture").unwrap();
-        assert!(relocate(&data, &old, |_| Ok(())).is_err());
-        let new = relocate(&data, &dest, |_| Ok(())).unwrap(); assert_eq!(root(&data).unwrap(), new.canonicalize().unwrap());
+        assert!(relocate(&data, &old.join("nested"), true, |_| Ok(())).is_err());
+        assert!(old.ends_with("PMCO Audio"));
+        let new = relocate(&data, &dest, true, |_| Ok(())).unwrap(); assert_eq!(root(&data).unwrap(), new.canonicalize().unwrap());
         assert_eq!(fs::read(new.join("disc/test.flac")).unwrap(), b"audio fixture"); assert!(old.join("disc/test.flac").is_file());
         assert!(join(&new, "../outside").is_err()); assert!(join(&new, "disc/file:stream").is_err());
         fs::remove_dir_all(&new).unwrap(); assert!(root(&data).is_err()); // no fallback/recreation on disconnected drive
@@ -141,11 +160,33 @@ mod tests {
     #[test]
     fn existing_destination_and_failed_copy_do_not_switch_or_overwrite() {
         let base = std::env::temp_dir().join(format!("pmco-location-fail-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
-        let data = base.join("data"); let dest = base.join("chosen"); fs::create_dir_all(&data).unwrap(); fs::create_dir_all(dest.join("PMCO Audio")).unwrap();
-        let old = root(&data).unwrap(); fs::write(dest.join("PMCO Audio/keep"), b"keep").unwrap();
-        assert!(relocate(&data, &dest, |_| Ok(())).is_err()); assert_eq!(root(&data).unwrap(), old);
-        assert_eq!(fs::read(dest.join("PMCO Audio/keep")).unwrap(), b"keep");
+        let data = base.join("data"); let dest = base.join("chosen"); fs::create_dir_all(&data).unwrap(); fs::create_dir_all(&dest).unwrap();
+        let old = root(&data).unwrap(); fs::write(dest.join("keep"), b"keep").unwrap(); fs::write(old.join("keep"), b"different").unwrap();
+        assert!(relocate(&data, &dest, true, |_| Ok(())).is_err()); assert_eq!(root(&data).unwrap(), old);
+        assert_eq!(fs::read(dest.join("keep")).unwrap(), b"keep");
         let target = base.join("target.flac"); assert!(copy_file(&base.join("missing"), &target).is_err()); assert!(!target.exists());
         fs::remove_dir_all(base).unwrap();
+    }
+    #[test]
+    fn direct_folder_merge_reuses_identical_files_and_keeps_unrelated_content() {
+        let base=std::env::temp_dir().join(format!("pmco-merge-{:x}",SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        let data=base.join("data");let dest=base.join("chosen");fs::create_dir_all(&data).unwrap();fs::create_dir_all(dest.join("disc")).unwrap();
+        let old=root(&data).unwrap();fs::create_dir(old.join("disc")).unwrap();
+        fs::write(old.join("disc/same.wav"),b"same").unwrap();fs::write(dest.join("disc/same.wav"),b"same").unwrap();fs::write(old.join("disc/new.wav"),b"new").unwrap();fs::write(dest.join("keep.txt"),b"keep").unwrap();
+        let new=relocate(&data,&dest,true,|_|Ok(())).unwrap();assert_eq!(new,dest.canonicalize().unwrap());assert!(!new.join("PMCO Audio").exists());assert_eq!(fs::read(new.join("disc/new.wav")).unwrap(),b"new");assert!(new.join("keep.txt").is_file());assert!(old.join("disc/new.wav").is_file());
+        fs::remove_dir_all(base).unwrap();
+    }
+    #[test]
+    fn switch_only_and_unavailable_old_location_preserve_originals_and_legacy_root() {
+        let base=std::env::temp_dir().join(format!("pmco-switch-{:x}",SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        let data=base.join("data");let legacy=data.join("audio");let dest=base.join("chosen");fs::create_dir_all(&legacy).unwrap();fs::create_dir_all(&dest).unwrap();fs::write(legacy.join("saved.wav"),b"old").unwrap();
+        assert_eq!(root(&data).unwrap(),legacy.canonicalize().unwrap());relocate(&data,&dest,false,|_|Ok(())).unwrap();assert!(!dest.join("saved.wav").exists());assert!(legacy.join("saved.wav").exists());
+        fs::remove_dir(&dest).unwrap();assert!(root(&data).is_err());let replacement=base.join("replacement");fs::create_dir(&replacement).unwrap();relocate(&data,&replacement,false,|_|Ok(())).unwrap();assert_eq!(root(&data).unwrap(),replacement.canonicalize().unwrap());fs::remove_dir_all(base).unwrap();
+    }
+    #[test]
+    fn failed_merge_rolls_back_only_new_copies_and_retains_previous_setting() {
+        let base=std::env::temp_dir().join(format!("pmco-merge-fail-{:x}",SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        let data=base.join("data");let dest=base.join("chosen");fs::create_dir_all(&data).unwrap();fs::create_dir_all(&dest).unwrap();let old=root(&data).unwrap();fs::write(old.join("new.wav"),b"new").unwrap();fs::write(dest.join("keep.wav"),b"keep").unwrap();
+        assert!(relocate(&data,&dest,true,|_|Err("isolated failure".into())).is_err());assert_eq!(root(&data).unwrap(),old);assert!(!dest.join("new.wav").exists());assert_eq!(fs::read(dest.join("keep.wav")).unwrap(),b"keep");fs::remove_dir_all(base).unwrap();
     }
 }

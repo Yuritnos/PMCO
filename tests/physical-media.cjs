@@ -34,7 +34,7 @@ async function fixture({native=false, extra=[]}={}) {
       case 'covers_root_dir':return 'C:\\isolated-media\\covers';
       case 'audio_present':return args.files.map(()=>true);
       case 'tidy_covers':return null;
-      case 'add_audio_folder': {
+      case 'add_audio': {
         if(state.folderHold)await state.folderHold;
         return ['10 Finale.wav','2 Middle.wav','1 Opening.wav'].map((name,i)=>{const file=args.cdId+'/folder-'+i+'.wav';state.copied.add(file);return {file,name:'Side A/'+name,size:100};});
       }
@@ -59,7 +59,7 @@ async function fixture({native=false, extra=[]}={}) {
   await page.goto('http://media.test/'); await page.locator('#card-old').waitFor();
   return {page,state,close:async()=>{await context.close();assert.deepEqual(state.errors,[]);}};
 }
-const view = async(page,m) => { if(await page.locator('#chip-all').getAttribute('aria-expanded')==='false')await page.locator('#chip-all').press('ArrowRight');await page.locator('[id="chip-media:'+m+'"]').click(); };
+const view = async(page,m) => { if(await page.locator('#compact-current').isVisible()&&await page.locator('#compact-current').getAttribute('aria-expanded')==='false')await page.locator('#compact-current').click(); if(await page.locator('#chip-all').getAttribute('aria-expanded')==='false')await page.locator('#chip-all').press('ArrowRight');await page.locator('[id="chip-media:'+m+'"]').click(); };
 async function save(page) { await page.locator('#submit').click(); await page.locator('#win-cd').waitFor({state:'hidden'}); }
 async function main() {
   const executablePath=['C:/Program Files/Google/Chrome/Application/chrome.exe',playwright.chromium.executablePath()].find(fs.existsSync);
@@ -114,7 +114,9 @@ async function main() {
       assert.equal(await page.locator('#add-h').textContent(),'Add a DVD/Blu-ray');
       await page.locator('#medium').selectOption('bluray'); await page.locator('#title').fill('New Blu-ray'); await save(page);
       assert.equal(state.doc.cds.find(c=>c.title==='New Blu-ray').medium,'bluray');
-      assert((await page.locator('#grid .medium-badge').allTextContents()).includes('1 Blu-ray'));
+      const saved=state.doc.cds.find(c=>c.title==='New Blu-ray');
+      assert.equal(await page.locator('#card-'+saved.id+' .medium-badge').count(),0);
+      await page.locator('#card-'+saved.id).click();assert.equal(await page.locator('#detail-body > .profile-main > .medium-badge, #detail-body .medium-badge').first().textContent(),'Blu-ray');
     } finally {await f.close();}
   });
   await test('collection filters omit Medium and Label while composer criteria still clear correctly',async()=>{
@@ -194,7 +196,7 @@ async function main() {
         await page.locator('#form-audio').scrollIntoViewIfNeeded();
         const geometry=await page.locator('#form-audio').evaluate(box=>{
           const main=box.querySelector('.pa-main').getBoundingClientRect(),row=box.querySelector('li').getBoundingClientRect(),select=box.querySelector('select').getBoundingClientRect();
-          const a=box.querySelector('#form-audio-add').getBoundingClientRect(),b=box.querySelector('#form-audio-folder').getBoundingClientRect();
+          const a=box.querySelector('#form-audio-add').getBoundingClientRect(),b=box.querySelector('#form-audio-split').getBoundingClientRect();
           return {main:main.width,row:row.width,select:select.width,separated:b.top>=a.bottom+4||b.left>=a.right+8,overflow:box.scrollWidth>box.clientWidth+1};
         });
         assert(geometry.main>geometry.row/2);assert(geometry.select>150);assert(geometry.separated);assert.equal(geometry.overflow,false);
@@ -291,7 +293,8 @@ async function main() {
       await save(page);
       const imported=f.state.doc.cds.filter(c=>c.set?.title==='Imported mixed release').sort((a,b)=>a.set.disc-b.set.disc);
       assert.deepEqual(imported.map(c=>c.medium),['cd','cd','vinyl','bluray']);
-      assert.deepEqual(imported[2].works.flatMap(w=>w.tracks.map(t=>t.position)),['A1','B1']);
+      assert.deepEqual(imported[2].works.map(w=>[w.side,w.title,w.duration]),[['a','Record side A','3:00'],['b','Record side B','4:00']]);
+      assert(imported[2].works.every(w=>w.tracks.length===0));
     } finally { await f.close(); }
   });
   await test('lookup searches remain unrestricted across medium choices',async()=>{
@@ -367,12 +370,12 @@ async function main() {
       await view(page,'cd'); assert.equal(await page.locator('#music-medium-control').count(),0);
     } finally {await f.close();}
   });
-  await test('folder imports sort naturally into a non-CD draft and discard removes only the new copies',async()=>{
+  await test('file imports sort naturally into a non-CD draft and discard removes only the new copies',async()=>{
     const f=await fixture({native:true}),{page,state}=f;
     try {
       await page.evaluate(c=>mediaQA.startEdit(c),seed[3]); await page.locator('#form-audio-set').evaluate(n=>n.open=true);
-      await page.locator('#form-audio-folder').click(); await page.locator('#form-audio-folder:not(:disabled)').waitFor();
-      assert(state.commands.some(c=>c.command==='add_audio_folder'&&c.args.cdId==='m3'));
+      await page.locator('#form-audio-add').click(); await page.locator('#form-audio-add:not(:disabled)').waitFor();
+      assert(state.commands.some(c=>c.command==='add_audio'&&c.args.cdId==='m3'));
       assert.equal(state.copied.size,3);
       assert.deepEqual(await page.locator('#form-audio .pa-file').allTextContents(),['Side A/1 Opening.wav','Side A/2 Middle.wav','Side A/10 Finale.wav']);
       assert.deepEqual(await page.locator('#form-audio select').evaluateAll(ns=>ns.map(n=>n.value)),['1','2','0']);
@@ -380,7 +383,7 @@ async function main() {
       await page.waitForFunction(()=>document.getElementById('win-cd').hidden);
       assert.equal(state.copied.size,0); assert.equal(state.doc.cds.find(c=>c.id==='m3').audio,undefined);
       await page.evaluate(c=>mediaQA.startEdit(c),seed[3]); await page.locator('#form-audio-set').evaluate(n=>n.open=true);
-      await page.locator('#form-audio-folder').click(); await page.locator('#form-audio-folder:not(:disabled)').waitFor();
+      await page.locator('#form-audio-add').click(); await page.locator('#form-audio-add:not(:disabled)').waitFor();
       state.failSave=true; await page.locator('#submit').click(); await page.locator('#submit:not(:disabled)').waitFor();
       assert.equal(state.copied.size,3); assert.equal(state.doc.cds.find(c=>c.id==='m3').audio,undefined);
       state.failSave=false; await save(page); assert.equal(state.doc.cds.find(c=>c.id==='m3').audio.length,3); assert.equal(state.copied.size,3);

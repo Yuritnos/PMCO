@@ -14,6 +14,7 @@ use tauri_plugin_dialog::DialogExt;
 mod cd_drive;
 mod storage;
 mod audio_location;
+mod audio_split;
 static COLLECTION_IO: std::sync::Mutex<()> = std::sync::Mutex::new(());
 static AUDIO_IO: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -497,21 +498,28 @@ async fn audio_root_dir(app: AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn choose_audio_location(app: AppHandle) -> Result<Option<String>, String> {
+async fn choose_audio_location(app: AppHandle, prompt: String, yes: String, no: String, cancel: String) -> Result<Option<String>, String> {
     let Some(picked) = app.dialog().file().blocking_pick_folder() else { return Ok(None) };
     let parent = picked.into_path().map_err(|_| "Choose a local folder.")?;
     tauri::async_runtime::spawn_blocking(move || {
-        let _guard = AUDIO_IO.lock().map_err(|_| "Audio storage is busy.")?;
+        let _guard = AUDIO_IO.try_lock().map_err(|_| "Audio storage is busy.")?;
         let dir = data_dir(&app)?;
-        let target = audio_location::relocate(&dir, &parent, |target| {
+        let merge = if audio_location::has_files(&dir)? && audio_location::root(&dir)? != parent.canonicalize().map_err(|_| "Choose an available folder.")? {
+            use tauri_plugin_dialog::{MessageDialogButtons, MessageDialogResult};
+            match app.dialog().message(prompt).title("PMCO").buttons(MessageDialogButtons::YesNoCancelCustom(yes.clone(), no.clone(), cancel)).blocking_show_with_result() {
+                MessageDialogResult::Custom(value) if value == yes => true,
+                MessageDialogResult::Custom(value) if value == no => false,
+                _ => return Ok(None),
+            }
+        } else { false };
+        let target = audio_location::relocate(&dir, &parent, merge, |target| {
             app.asset_protocol_scope().allow_directory(target, true).map_err(|_| "Could not allow the audio folder.".into())
         })?;
         Ok(Some(target.to_string_lossy().into_owned()))
     }).await.map_err(|_| "Could not change the audio folder.")?
 }
 
-const MAX_FOLDER_AUDIO_FILES: usize = 5000;
-const MAX_FOLDER_ENTRIES: usize = 50_000;
+const MAX_AUDIO_FILES: usize = 5000;
 
 fn supported_audio(path: &Path) -> bool {
     path.extension().and_then(|e| e.to_str())
@@ -527,44 +535,10 @@ fn linked_entry(meta: &fs::Metadata) -> bool {
     false
 }
 
-/// Read only the chosen tree, never following links/junctions or traversing the app audio library.
-fn folder_audio_sources(root: &Path, excluded: &Path) -> Result<Vec<(PathBuf, String)>, String> {
-    let root_meta = fs::symlink_metadata(root).map_err(|e| e.to_string())?;
-    if linked_entry(&root_meta) || !root_meta.is_dir() { return Err("Choose a regular audio folder.".into()); }
-    let root = root.canonicalize().map_err(|e| e.to_string())?;
-    let excluded = excluded.canonicalize().map_err(|e| e.to_string())?;
-    if root.starts_with(&excluded) { return Err("Choose an original audio folder outside the PMCO library.".into()); }
-    let mut pending = vec![(root.clone(), 0usize)];
-    let mut files = Vec::new();
-    let mut visited = 0usize;
-    while let Some((dir, depth)) = pending.pop() {
-        for item in fs::read_dir(&dir).map_err(|e| format!("Could not read the audio folder: {e}"))? {
-            let entry = item.map_err(|e| e.to_string())?;
-            visited += 1;
-            if visited > MAX_FOLDER_ENTRIES { return Err("Choose a smaller folder (at most 50,000 entries).".into()); }
-            let path = entry.path();
-            let meta = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
-            if linked_entry(&meta) { continue; }
-            let resolved = path.canonicalize().map_err(|e| e.to_string())?;
-            if !resolved.starts_with(&root) || resolved.starts_with(&excluded) { continue; }
-            if meta.is_dir() {
-                if depth >= 16 { return Err("Choose a folder with fewer nested folders.".into()); }
-                pending.push((path, depth + 1));
-            } else if meta.is_file() && supported_audio(&path) {
-                let name = path.strip_prefix(&root).map_err(|e| e.to_string())?.to_string_lossy().replace('\\', "/");
-                files.push((path, name));
-                if files.len() > MAX_FOLDER_AUDIO_FILES { return Err("Choose at most 5,000 audio files at a time.".into()); }
-            }
-        }
-    }
-    files.sort_by(|a, b| a.1.cmp(&b.1));
-    Ok(files)
-}
-
 /// A batch owns only newly-created copies. Never overwrite library files, even on failure.
 fn copy_audio_sources(sources: &[(PathBuf, String)], dir: &Path, cd_id: &str) -> Result<Vec<AudioFile>, String> {
     check_cd_id(cd_id)?;
-    if sources.len() > MAX_FOLDER_AUDIO_FILES { return Err("Choose at most 5,000 audio files at a time.".into()); }
+    if sources.len() > MAX_AUDIO_FILES { return Err("Choose at most 5,000 audio files at a time.".into()); }
     fs::create_dir_all(dir).map_err(|e| format!("Could not create {}: {e}", dir.display()))?;
     let mut added = Vec::new();
     let mut copied = Vec::new();
@@ -613,20 +587,6 @@ async fn add_audio(app: AppHandle, cd_id: String) -> Result<Vec<AudioFile>, Stri
     }).await.map_err(|e| e.to_string())?
 }
 
-/// USB/SD and other folder imports use the same isolated draft lifecycle as individual files.
-#[tauri::command]
-async fn add_audio_folder(app: AppHandle, cd_id: String) -> Result<Vec<AudioFile>, String> {
-    check_cd_id(&cd_id)?;
-    let Some(picked) = app.dialog().file().blocking_pick_folder() else { return Ok(Vec::new()) };
-    let source = picked.into_path().map_err(|e| e.to_string())?;
-    tauri::async_runtime::spawn_blocking(move || {
-        let _guard = AUDIO_IO.lock().map_err(|_| "Audio storage is busy.")?;
-        let root = audio_root(&app)?;
-        let files = folder_audio_sources(&source, &root)?;
-        copy_audio_sources(&files, &audio_location::join(&root, &cd_id)?, &cd_id)
-    }).await.map_err(|e| e.to_string())?
-}
-
 #[cfg(test)]
 mod audio_import_tests {
     use super::*;
@@ -639,16 +599,6 @@ mod audio_import_tests {
         }
     }
     impl Drop for Fixture { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); } }
-    #[test]
-    fn folder_import_finds_nested_audio_and_excludes_the_library() {
-        let f = Fixture::new(); let library = f.0.join("library"); let album = f.0.join("Album");
-        fs::create_dir_all(&library).unwrap(); fs::create_dir_all(&album).unwrap();
-        fs::write(album.join("01.FLAC"), b"audio").unwrap(); fs::write(album.join("cover.jpg"), b"picture").unwrap();
-        fs::write(library.join("saved.wav"), b"keep").unwrap();
-        let sources = folder_audio_sources(&f.0, &library).unwrap();
-        assert_eq!(sources.len(), 1); assert_eq!(sources[0].1, "Album/01.FLAC");
-        assert!(folder_audio_sources(&library, &library).is_err());
-    }
     #[test]
     fn copy_batch_preserves_originals_and_assigns_unique_local_names() {
         let f = Fixture::new(); let output = f.0.join("library"); fs::create_dir_all(&output).unwrap();
@@ -676,10 +626,8 @@ mod audio_import_tests {
         let invalid = f.0.join("picture.png"); fs::write(&invalid, b"picture").unwrap();
         assert!(copy_audio_sources(&[(invalid.clone(), "picture.png".into())], &library, "fixture").is_err());
         assert!(copy_audio_sources(&[], &library, "../escape").is_err());
-        assert!(copy_audio_sources(&vec![(invalid, "picture.png".into()); MAX_FOLDER_AUDIO_FILES+1], &library, "fixture").is_err());
-        let mut nested = f.0.join("deep");
-        for _ in 0..18 { nested = nested.join("a"); } fs::create_dir_all(&nested).unwrap();
-        assert!(folder_audio_sources(&f.0.join("deep"), &library).is_err());
+        assert!(copy_audio_sources(&vec![(invalid, "picture.png".into()); MAX_AUDIO_FILES+1], &library, "fixture").is_err());
+
     }
 }
 
@@ -723,7 +671,9 @@ async fn remove_cd_audio(app: AppHandle, cd_id: String) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .manage(cd_drive::DriveState::default())
-        .setup(|app| { let _ = cd_drive::recover(app.handle()); Ok(()) })
+        .manage(audio_split::SplitState::default())
+        .register_uri_scheme_protocol("pmco-audio", |context, request| audio_split::preview(context.app_handle(), request))
+        .setup(|app| { let _ = cd_drive::recover(app.handle()); let _ = audio_split::recover(app.handle()); Ok(()) })
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             load_data,
@@ -733,7 +683,11 @@ pub fn run() {
             fetch_cover,
             audio_root_dir,
             add_audio,
-            add_audio_folder,
+            audio_split::prepare_audio_split,
+            audio_split::start_audio_split,
+            audio_split::audio_split_status,
+            audio_split::cancel_audio_split,
+            audio_split::adopt_audio_split,
             audio_present,
             remove_audio,
             remove_cd_audio,

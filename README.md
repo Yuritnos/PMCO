@@ -20,7 +20,7 @@ editing vinyl through named A/B sides with independent works and numbering. All 
 Trial changes are saved only in `installers/media-trial/collection.json`, separate from
 the installed app. **Reset samples** restores the examples. Account sync is disabled
 in this trial. Native audio-file import and CD-drive extraction require the Windows
-desktop app; the browser preview covers cataloguing. In the desktop editor, Add audio from a folder copies supported local/USB/SD audio, including subfolders, into the current item draft. All music offers Medium inside Filter; Collection uses the medium sidebar, and both omit the Label filter; filtering keeps the queue and current track intact. Stop the server with Ctrl+C.
+desktop app; the browser preview covers cataloguing. In the desktop editor, Add audio files copies selected files into the current item draft. Add audio files and trim supports sample-aligned WAV/FLAC splitting with retained/discarded regions, preview, boundary editing and Undo. Audio storage defaults to PMCO Audio in app data; a manually chosen folder is used directly, with an optional verified merge of old audio. All music offers Medium inside Filter; Collection uses the medium sidebar, and both omit the Label filter; filtering keeps the queue and current track intact. Stop the server with Ctrl+C.
 No installer build, version change or database migration is needed to run this preview.
 
 It is built with [Tauri 2](https://tauri.app). The screens are a single web page (`src/index.html`) shown in the system's own web view. A small Rust program (`src-tauri/`) keeps the collection in a file on the computer. The same project can later be built for macOS, iPhone and Android.

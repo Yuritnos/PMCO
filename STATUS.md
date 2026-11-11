@@ -1,8 +1,16 @@
 # PMCO current status
 
-Updated: 2026-11-10 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
+Updated: 2026-11-11 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: PMCO 0.3.1 build 60 published (2026-11-10)
+## Current milestone: improvements 3.4 and 3.5 implemented; Windows build pending (2026-11-11)
+
+- Implemented the requirements from the owner's 3.4 optimized specification and 3.5 document. Narrow windows use a 44px sticky navigation bar and scrollable menus; desktop navigation and shelf tools retain their behavior. All seven media expose free-text Media condition with fixed grade suggestions. CD pairs it with hub manufacturing; SACD hides hub while preserving saved values. Condition participates in drafts, details, copy, JSON/CSV and existing metadata sync, and is excluded from lookup-owned values and card/filter/statistic choices.
+- Replaced folder audio import with WAV/FLAC trimming. One timeline handles retained/discarded regions, selection, group movement, draggable/precise boundaries, preview, 1–32× zoom, Undo/Redo and confirmed reset/discard/write. Native splitting uses bounded reads or the pinned FLAC encoder, validates retained sample counts, supports progress/cancellation, and stages files before draft adoption. Recovery manifests preserve referenced audio and backups. No lossy decoder dependency was added.
+- New profiles default to app-data/PMCO Audio; existing legacy audio roots are retained. Chosen folders are used directly, with Copy and merge / Switch only / Cancel when old files exist. Merge verifies identical collisions, refuses conflicting bytes, rolls back only new copies on failure, and retains originals. An unavailable old root can be replaced through the picker.
+- Verification: 34 native tests; 15 new 3.4/3.5 browser checks; 38 collection integration; 28 media editor; 18 physical media; 7 audio draft; 15 drive import checks passed (155 unique checks, with focused reruns for corrected tests). Two stale physical-media expectations also failed against build-60 source and were updated for its existing contextual badges and undivided vinyl works. Browser fixtures mock all account/storage services; no owner account, collection or drive was used. Three languages, light/dark, 360–1280px, 500px+ scroll and keyboard/pointer editing verified. Details: docs/improvements-34-35.md.
+- Next: commit/push this task's files, dispatch build-windows.yml, verify both staged installers, archive build 60 packages/source, and replace installers/nsis and installers/msi. Keep version 0.3.1. No website publication, tag/release or hosted database change is requested.
+
+## Previous milestone: PMCO 0.3.1 build 60 published (2026-11-10)
 
 - Label, Issuing corporation, Manufactured by and Country of manufacture use fixed preset lists. Manual and Discogs-filled values belong to the individual item. Collection values such as Bilibili and legacy manufacturer aliases never enter the preset lists.
 - **Six focused browser checks passed** across metadata suggestions, custom and legacy values, Discogs lookup, localized fields and responsive layout.

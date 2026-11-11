@@ -36,7 +36,7 @@ async function fixture({native=false, extra=[]}={}) {
       case 'list_backups':return [{file:'collection.backup.json',modified:1794100000000,count:7}];
       case 'audio_present':return args.files.map(()=>true);
       case 'tidy_covers':return null;
-      case 'add_audio_folder': {
+      case 'add_audio': {
         if(state.folderHold)await state.folderHold;
         return ['10 Finale.wav','2 Middle.wav','1 Opening.wav'].map((name,i)=>{const file=args.cdId+'/folder-'+i+'.wav';state.copied.add(file);return {file,name:'Side A/'+name,size:100};});
       }

@@ -34,7 +34,7 @@ async function fixture({native=false, extra=[]}={}) {
       case 'covers_root_dir':return 'C:\\isolated-media\\covers';
       case 'audio_present':return args.files.map(()=>true);
       case 'tidy_covers':return null;
-      case 'add_audio_folder': {
+      case 'add_audio': {
         if(state.folderHold)await state.folderHold;
         return ['10 Finale.wav','2 Middle.wav','1 Opening.wav'].map((name,i)=>{const file=args.cdId+'/folder-'+i+'.wav';state.copied.add(file);return {file,name:'Side A/'+name,size:100};});
       }
@@ -440,7 +440,7 @@ async function main() {
       await page.locator('#lookup-use-0').click();
       await page.waitForFunction(title=>document.getElementById('title').value===title,release.title);
       assert(await page.locator('#lookup-disc-row').isHidden());
-      await page.locator('#form-audio-folder').click();
+      await page.locator('#form-audio-add').click();
       await audio.locator('.audio-draft li').nth(2).waitFor();
       await save(page);
       const saved=state.doc.cds.find(cd=>cd.title===release.title);

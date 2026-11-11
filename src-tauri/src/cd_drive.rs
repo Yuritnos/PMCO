@@ -190,13 +190,13 @@ mod platform {
 }
 
 fn root(app:&AppHandle)->Result<PathBuf>{let dir=super::data_dir(app)?.join("cd-imports");fs::create_dir_all(&dir).map_err(|_|fail("drive_write"))?;Ok(dir)}
-fn cleanup_folder(path:&Path){if path.file_name().and_then(|p|p.to_str()).map(|p|p.starts_with("rip-")).unwrap_or(false)&&!path.is_symlink(){let _=fs::remove_dir_all(path);}}
+fn cleanup_folder(path:&Path){if path.file_name().and_then(|p|p.to_str()).map(|p|p.starts_with("rip-")||p.starts_with("split-")).unwrap_or(false)&&!path.is_symlink(){let _=fs::remove_dir_all(path);}}
 fn owned_file(job:&str,file:&str)->bool {
     let parts=file.split('/').collect::<Vec<_>>();
-    parts.len()==2 && super::check_cd_id(parts[0]).is_ok() && parts[1].starts_with(&format!("{job}-track-")) &&
+    parts.len()==2 && super::check_cd_id(parts[0]).is_ok() && parts[1].starts_with(&format!("{job}-{}-",if job.starts_with("split-"){ "part" }else{ "track" })) &&
         !parts[1].contains(['\\','/']) && (parts[1].ends_with(".wav")||parts[1].ends_with(".flac"))
 }
-fn collection_references(data:&Path)->(String,bool) {
+pub(crate) fn collection_references(data:&Path)->(String,bool) {
     let mut text=String::new();let mut safe=true;
     let mut paths=vec![data.join(super::DATA_FILE),data.join(super::BACKUP_FILE)];
     match super::preserved_collections(data) { Ok(preserved)=>paths.extend(preserved),Err(_)=>safe=false }
@@ -209,7 +209,7 @@ fn collection_references(data:&Path)->(String,bool) {
         Err(e)=>if e.kind()!=std::io::ErrorKind::NotFound{safe=false;}
     }} (text,safe)
 }
-fn reap_folder(folder:&Path,audio:&Path,references:&str,can_clean:bool)->bool {
+pub(crate) fn reap_folder(folder:&Path,audio:&Path,references:&str,can_clean:bool)->bool {
     let name=folder.file_name().unwrap_or_default().to_string_lossy();
     let manifest=folder.join("adopted.json");
     if manifest.exists(){
@@ -238,7 +238,9 @@ pub fn recover(app:&AppHandle)->Result<()> {
         reap_folder(&entry.path(),&audio,&references,can_clean);
     } Ok(())
 }
+pub(crate) fn process_alive(pid:u32)->bool { platform::alive(pid) }
 fn run_job(job:&Arc<Job>,drive:&str,fingerprint:&str,format:&str,encoder:&Path)->Result<()> {
+    let _audio_guard=super::AUDIO_IO.try_lock().map_err(|_|fail("drive_busy"))?;
     let mut device=platform::Device::open(drive)?;let disc=device.prepare(fingerprint)?;
     let total:u32=disc.tracks.iter().map(|t|t.sectors).sum();
     if platform::space(&job.folder)? < total as u64*SECTOR_BYTES as u64 + RESERVE {return Err(fail("drive_space"));}

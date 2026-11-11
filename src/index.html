@@ -11,6 +11,29 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%232b3990%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%225%22 fill=%22white%22/%3E%3C/svg%3E">
 <style>
+
+.panel.split-panel { width:min(1000px,100%); }
+#win-split { z-index:70; }
+#win-split-confirm { z-index:75; }
+.split-controls { border:0; padding:0; margin:0; min-width:0; }
+.split-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
+.split-actions button { min-height:36px; }
+.split-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:4px; }
+.split-timeline { position:relative; height:150px; min-width:100%; }
+#split-ruler { position:relative; height:40px; cursor:crosshair; border-bottom:1px solid var(--line); }
+#split-ruler span { position:absolute; font:11px var(--font-mono); top:8px; transform:translateX(-50%); white-space:nowrap; pointer-events:none; }
+#split-ruler span:first-child { transform:none; } #split-ruler span:last-child { transform:translateX(-100%); }
+#split-band { position:relative; height:108px; }
+.split-part { position:absolute; top:14px; bottom:14px; background:var(--accent); color:var(--accent-ink); border:1px solid var(--surface); border-radius:3px; overflow:hidden; cursor:grab; min-width:0; padding:4px 0; touch-action:none; }
+.split-part span, .split-part small { display:block; white-space:nowrap; pointer-events:none; }
+.split-part.is-gap { background:repeating-linear-gradient(135deg,var(--field),var(--field) 6px,var(--line) 6px,var(--line) 8px); color:var(--ink); }
+.split-part.is-selected, .split-point.is-selected { outline:3px solid var(--ink); outline-offset:-3px; }
+.split-point { position:absolute; top:0; bottom:0; width:14px; padding:0; margin-left:-7px; border:0; border-left:2px solid var(--ink); background:transparent; cursor:ew-resize; z-index:2; touch-action:none; }
+.split-point::before { content:""; position:absolute; top:0; left:-5px; width:8px; height:12px; background:var(--ink); }
+#split-head { position:absolute; top:0; bottom:0; width:2px; background:var(--danger); pointer-events:none; z-index:3; }
+#split-point-time { width:130px; } #split-head-time { margin-inline-start:auto; font-family:var(--font-mono); }
+#split-summary { font-weight:600; } #split-status { color:var(--danger); } #split-name { overflow-wrap:anywhere; }
+
 /* Layout: header with language and account, an albums bar, then a grid of square cover cards.
    Adding, editing, albums and settings all open as floating windows over the shelf.
    Palette: cool paper grey, ink blue-black, one indigo accent, silver disc iridescence as the only flourish.
@@ -529,6 +552,8 @@ details.more[open] > summary { margin-bottom: 14px; }
 /* Left column: albums, then the settings button pinned to the bottom */
 .layout { display: grid; grid-template-columns: minmax(0, 188px) minmax(0, 1fr); gap: 28px; align-items: start; }
 .layout > main { min-width: 0; }
+.compact-nav { display:none; }
+.compact-more { display:contents; }
 .side {
   position: sticky;
   top: 20px;
@@ -1104,6 +1129,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 .copy-details-grid input { flex: none; accent-color: var(--accent); }
 .copy-details-all { border-bottom: 1px solid var(--line); margin-bottom: 4px; }
 @media (max-width: 480px) {
+  #hub-condition { grid-template-columns:minmax(0,1fr); }
   .cd-editor-panel:has(#form-disc-tools:not([hidden])) { padding-inline: 8px; column-gap: 8px; }
   .disc-editor-actions .iconbtn { width: 34px; }
   .disc-editor-tabs .segment-select { padding: 6px 4px; font-size: 12px; }
@@ -1173,15 +1199,17 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
 @media (max-width: 860px) {
   .top h1 { font-size: 40px; }
-  .layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .side { position: static; max-height: none; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px; }
-  .side-h { flex-basis: 100%; margin-left: 0; }
-  .albums { flex-direction: row; flex-wrap: wrap; overflow: visible; gap: 8px; flex: 1 1 100%; }
-  .achip { width: auto; max-width: 100%; border: 1px solid var(--line); background: var(--field); }
-  .achip[aria-pressed="true"] { border-color: var(--accent); }
-  .albums .linkbtn { padding: 6px 4px; }
-  .favgroup { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; margin: 0; padding-left: 0; border-left: 0; gap: 8px; }
-  .setbtn { width: auto; margin-top: 0; }
+  .layout { display:block; }
+  .layout > main { margin-top:20px; }
+  .side { top:0; z-index:30; height:44px; max-height:44px; padding:3px; display:block; }
+  .compact-nav { display:flex; gap:6px; height:36px; }
+  .compact-nav button { min-height:36px; min-width:36px; }
+  #compact-current { flex:1; min-width:0; display:flex; align-items:center; gap:8px; text-align:start; }
+  #compact-current .nm { flex:1; white-space:nowrap; overflow:auto; scrollbar-width:none; }
+  .side > .albums, .compact-more { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; max-height:min(65vh,520px); overflow:auto; padding:10px; background:var(--surface); border:1px solid var(--line); border-radius:4px; box-shadow:0 8px 24px #0002; }
+  .side.nav-open > .albums { display:flex; }
+  .side.more-open .compact-more { display:block; left:auto; min-width:180px; }
+  .compact-more .setbtn { min-height:36px; margin:0; }
 }
 @media (max-width: 480px) {
   .panel { padding: 18px 16px 22px; }
@@ -1267,7 +1295,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
   <div class="layout">
   <aside class="side">
+    <div class="compact-nav">
+      <button type="button" class="btn quiet" id="compact-current" aria-expanded="false" aria-controls="albums"><span class="nm"></span><span aria-hidden="true">▾</span></button>
+      <button type="button" class="btn quiet" id="compact-more" aria-expanded="false" aria-controls="compact-actions" data-i18n-aria="navMore" aria-label="More">⋯</button>
+    </div>
     <nav class="albums" id="albums" data-i18n-aria="navLabel" aria-label="Browse"></nav>
+    <div class="compact-more" id="compact-actions">
     <button type="button" class="setbtn" id="open-stats">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
       <span data-i18n="statsBtn">Statistics</span>
@@ -1280,6 +1313,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       </svg>
       <span data-i18n="settingsBtn">Settings</span>
     </button>
+    </div>
   </aside>
 
   <main>
@@ -1337,6 +1371,25 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 </div>
 
 <!-- Window: add or edit a CD -->
+<div class="overlay" id="win-split" hidden>
+  <section class="panel split-panel" role="dialog" aria-modal="true" aria-labelledby="split-title">
+    <div class="panel-head"><h2 id="split-title" data-i18n="splitTitle">Trim audio</h2><button type="button" class="iconbtn" id="split-close" data-i18n-aria="close" aria-label="Close">×</button></div>
+    <p id="split-name" class="hint"></p>
+    <audio id="split-player" controls preload="metadata" style="width:100%"></audio>
+    <p id="split-warnings" class="hint" role="status"></p>
+    <fieldset id="split-edit-controls" class="split-controls">
+      <div class="split-actions"><button type="button" class="btn small quiet" id="split-select-all" data-i18n="splitSelectAll"></button><button type="button" class="btn small quiet" id="split-drop" data-i18n="splitDrop"></button><button type="button" class="btn small quiet" id="split-keep" data-i18n="splitRestore"></button><button type="button" class="btn small quiet" id="split-preview" data-i18n="splitPreview"></button></div>
+      <div class="split-actions"><button type="button" class="btn small quiet" id="split-add-point" data-i18n="splitAddPoint"></button><button type="button" class="btn small quiet" id="split-undo" data-i18n="splitUndo"></button><button type="button" class="btn small quiet" id="split-redo" data-i18n="splitRedo"></button><button type="button" class="btn small quiet" id="split-reset" data-i18n="splitReset"></button><button type="button" class="iconbtn" id="split-zoom-out" data-i18n-aria="splitZoomOut">−</button><span id="split-zoom-value"></span><button type="button" class="iconbtn" id="split-zoom-in" data-i18n-aria="splitZoomIn">＋</button><output id="split-head-time"></output></div>
+      <div class="split-scroll" id="split-scroll"><div class="split-timeline" id="split-timeline"><div id="split-ruler" tabindex="0" role="slider" aria-valuemin="0" aria-valuenow="0" data-i18n-aria="splitRuler"></div><div id="split-band"></div><div id="split-head"></div></div></div>
+      <div class="split-actions" id="split-point-row" hidden><label for="split-point-time" data-i18n="splitPoint"></label><input id="split-point-time" class="input" type="text" placeholder="mm:ss.mmm" inputmode="decimal"><output id="split-point-lengths"></output><button type="button" class="btn small quiet" id="split-point-play" data-i18n="splitPlayPoint"></button><button type="button" class="btn small quiet" id="split-delete-point" data-i18n="splitDeletePoint"></button></div>
+    </fieldset>
+    <p class="hint" data-i18n="splitHelp"></p><p id="split-summary" role="status"></p><p id="split-status" role="status"></p>
+    <progress id="split-progress" max="100" value="0" hidden style="width:100%" data-i18n-aria="splitWriting"></progress>
+    <button type="button" class="btn" id="split-confirm" data-i18n="splitWrite"></button>
+  </section>
+</div>
+<div class="overlay" id="win-split-confirm" hidden><section class="panel" role="dialog" aria-modal="true" aria-labelledby="split-ask-text"><p id="split-ask-text"></p><div class="split-actions"><button type="button" class="btn quiet" id="split-ask-no" data-i18n="cancel">Cancel</button><button type="button" class="btn" id="split-ask-yes"></button></div></section></div>
+
 <div class="overlay" id="win-cd" hidden>
   <section class="panel cd-editor-panel" role="dialog" aria-modal="true" aria-labelledby="add-h">
     <div class="panel-head">
@@ -1528,10 +1581,17 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
               <input class="input" id="ifpiMould" type="text" autocomplete="off" data-i18n-ph="ifpiMouldPh" placeholder="e.g. IFPI 0110">
             </div>
           </div>
+          <div class="two" id="hub-condition">
           <div class="field">
             <label class="lbl" for="hub" data-i18n="hub">Inner ring manufacturing</label>
             <input class="input" id="hub" type="text" list="hub-options" data-i18n-ph="hubPh" placeholder="e.g. Full silver hub" autocomplete="off">
             <datalist id="hub-options"></datalist>
+          </div>
+          <div class="field">
+            <label class="lbl" for="condition" data-i18n="mediaCondition">Media condition</label>
+            <input class="input" id="condition" type="text" list="condition-options" placeholder="M / NM / VG+ / VG / G+ / G / F / P" autocomplete="off">
+            <datalist id="condition-options"><option value="M"><option value="NM"><option value="VG+"><option value="VG"><option value="G+"><option value="G"><option value="F"><option value="P"></datalist>
+          </div>
           </div>
           <div id="medium-details" class="two"></div>
           <div class="field">
@@ -2760,12 +2820,19 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     driveEncoder: "内置FLAC编码器未能完成编码，请重试或选择WAV格式。", driveWindows: "从CD光驱导入功能仅适用于Windows桌面应用。", driveBusy: "请先完成或取消当前光盘导入。",
     driveMismatch: "编辑页有 {current} 条音轨，光盘有 {total} 条。请先调整作品与音轨结构，再复制音频。"
   });
+  Object.assign(I18N.en, {"splitAdd": "+ Add audio files and trim…", "splitTitle": "Trim audio", "splitKeep": "Keep", "splitGap": "Discard", "splitPoint": "Split point", "splitSelectAll": "Select all segments", "splitDrop": "Set as discarded", "splitRestore": "Keep selected", "splitPreview": "Preview selection", "splitAddPoint": "Add split point", "splitDeletePoint": "Delete split point", "splitPlayPoint": "Play from point", "splitUndo": "Undo", "splitRedo": "Redo", "splitReset": "Restore automatic split", "splitZoomIn": "Zoom in", "splitZoomOut": "Zoom out", "splitWrite": "Add to audio draft", "splitSummary": "Will write {files} files; discard {gaps} segments totalling {time}.", "splitMissing": "Entry {n} has no duration and was skipped.", "splitRemaining": "Not enough audio for entry {n} and later entries. The remainder is discarded.", "splitShort": "The first duration is {needed}, but the audio is only {actual}. The whole file is kept.", "splitHelp": "Click segments to select; Ctrl/Cmd toggles, Shift selects a range. Drag selected segments to move them, or use ←/→ (0.1s; Alt: 1s). Click the ruler to seek; double-click to split. Drag a point or enter its time below. Ctrl+wheel zooms.", "splitDraftHint": "Files stay in this draft until you save the release.", "splitDiscardAsk": "Discard this split session? Saved audio and the source file will remain unchanged.", "splitCancelAsk": "Cancel audio writing and discard this split session?", "splitDiscard": "Discard split session", "splitResetAsk": "Restore automatic splitting? Manual edits and discarded regions will be replaced.", "splitWriting": "Writing retained segments…", "splitInvalid": "Cannot read a valid duration. Choose an uncompressed PCM/float WAV or a FLAC file with a known duration.", "splitError": "Audio could not be written. New files were cleaned up; your source is unchanged. Try again.", "splitBusy": "Another audio task is running. Finish or cancel it first.", "splitChanged": "The source file changed. Close this session and choose it again.", "splitPreviewFail": "Preview is unavailable for this file. You can still edit and split it.", "splitTooClose": "Leave at least 0.1 seconds between split points.", "splitBadTime": "Enter mm:ss.mmm within the neighbouring split points. The previous value was kept.", "splitExcess": "Extra files have no track assigned. Use the audio list to assign them.", "splitRuler": "Timeline: arrows seek, Enter adds a point, Space plays or pauses", "audioLocationHint": "Default audio is kept in PMCO Audio in the app data folder. A chosen folder is used directly. If the old folder contains files, choose whether to copy and merge them. Originals stay in place. This setting is local to this computer.", "audioLocationMergeAsk": "Copy and merge audio from the previous folder into the selected folder? Choose “Switch only” to leave files at the old location; those files may appear missing until copied. Originals are always kept.", "audioLocationMerge": "Copy and merge", "audioLocationSwitch": "Switch only", "audioLocationConflict": "A different file already uses the same path in the destination. Nothing was replaced; the audio location is unchanged."});
+  Object.assign(I18N.ja, {"splitAdd": "＋音声ファイルを追加して分割…", "splitTitle": "音声を分割", "splitKeep": "保持", "splitGap": "破棄", "splitPoint": "分割点", "splitSelectAll": "全区間を選択", "splitDrop": "破棄にする", "splitRestore": "選択区間を保持", "splitPreview": "選択区間を試聴", "splitAddPoint": "分割点を追加", "splitDeletePoint": "分割点を削除", "splitPlayPoint": "分割点から再生", "splitUndo": "元に戻す", "splitRedo": "やり直す", "splitReset": "自動分割に戻す", "splitZoomIn": "拡大", "splitZoomOut": "縮小", "splitWrite": "音声の下書きに追加", "splitSummary": "{files}ファイルを書き出し、{gaps}区間（計{time}）を破棄します。", "splitMissing": "項目{n}は長さがないため分割計算から除外しました。", "splitRemaining": "項目{n}以降の長さが足りません。残りは破棄されます。", "splitShort": "最初の長さは{needed}、音声は{actual}です。ファイル全体を保持します。", "splitHelp": "クリックで選択、Ctrl/Cmdで複数、Shiftで範囲選択。ドラッグまたは←/→で移動（0.1秒、Altで1秒）。目盛りをクリックして移動、ダブルクリックで分割。境界をドラッグ、または下で時刻を入力。Ctrl＋ホイールで拡大縮小。", "splitDraftHint": "リリースを保存するまでは下書きのままです。", "splitDiscardAsk": "今回の分割を破棄しますか？保存済み音声と元ファイルは保持されます。", "splitCancelAsk": "書き出しを中止して今回の分割を破棄しますか？", "splitDiscard": "今回の分割を破棄", "splitResetAsk": "自動分割に戻しますか？手動編集と破棄区間が置き換わります。", "splitWriting": "保持区間を書き出しています…", "splitInvalid": "長さを読み取れません。非圧縮PCM／浮動小数点WAV、または長さが記録されたFLACを選んでください。", "splitError": "書き出しに失敗しました。新しいファイルは削除され、元ファイルは保持されています。再試行してください。", "splitBusy": "別の音声処理を完了または中止してください。", "splitChanged": "元ファイルが変更されました。閉じて再度選んでください。", "splitPreviewFail": "このファイルは試聴できません。編集と分割は可能です。", "splitTooClose": "分割点の間を0.1秒以上空けてください。", "splitBadTime": "隣の分割点の範囲内でmm:ss.mmmを入力してください。元の値を保持しました。", "splitExcess": "余分なファイルは未割り当てです。音声一覧で割り当ててください。", "splitRuler": "時間軸：矢印で移動、Enterで分割、Spaceで再生／停止", "audioLocationHint": "既定ではアプリデータ内のPMCO Audioに保存します。手動で選んだフォルダーはそのまま使用します。旧保存先にファイルがある場合はコピーして統合するか選べます。元のファイルは保持され、この設定は同期されません。", "audioLocationMergeAsk": "旧保存先の音声を選択したフォルダーにコピーして統合しますか？「保存先のみ変更」では旧ファイルをコピーせず、音声が見つからない表示になる場合があります。元ファイルは常に保持します。", "audioLocationMerge": "コピーして統合", "audioLocationSwitch": "保存先のみ変更", "audioLocationConflict": "移動先に同じパスで内容の異なるファイルがあります。上書きせず、保存先も変更しませんでした。"});
+  Object.assign(I18N.zh, {"splitAdd": "＋添加音频文件并裁剪…", "splitTitle": "裁剪音频", "splitKeep": "保留", "splitGap": "留空", "splitPoint": "分割点", "splitSelectAll": "全选所有分割", "splitDrop": "设为留空", "splitRestore": "取消留空", "splitPreview": "试听选定区间", "splitAddPoint": "添加分割点", "splitDeletePoint": "删除分割点", "splitPlayPoint": "从分割点播放", "splitUndo": "撤销", "splitRedo": "重做", "splitReset": "恢复自动分割", "splitZoomIn": "放大", "splitZoomOut": "缩小", "splitWrite": "加入音频草稿", "splitSummary": "将写出 {files} 个文件，丢弃 {gaps} 段共 {time}。", "splitMissing": "第 {n} 个音轨缺少时长，未参与分割。", "splitRemaining": "剩余音频不足第 {n} 个音轨及后续条目的时长，余下部分留空。", "splitShort": "首个时长需要 {needed}，音频只有 {actual}，将保留整段。", "splitHelp": "点击选择，Ctrl/Cmd 多选，Shift 连选。拖动选中段或用 ←/→ 移动（0.1 秒；Alt 为 1 秒）。点击刻度定位，双击添加切点；拖动切点或在下方精确输入时间。Ctrl＋滚轮缩放。", "splitDraftHint": "文件加入草稿，保存专辑后才正式保留。", "splitDiscardAsk": "放弃本次分割结果？已保存音频和源文件会保留。", "splitCancelAsk": "取消写入并放弃本次分割结果？", "splitDiscard": "放弃本次分割", "splitResetAsk": "恢复自动分割？手动修改和手动留空设置将被替换。", "splitWriting": "正在写出保留区间…", "splitInvalid": "无法读取有效时长。请选择未压缩的 PCM／浮点 WAV，或包含有效时长的 FLAC 文件。", "splitError": "无法写出音频，已清理本次新文件，源文件保留。请重试。", "splitBusy": "请先完成或取消其他音频写入任务。", "splitChanged": "源文件已变更，请关闭后重新选择。", "splitPreviewFail": "此文件无法试听，仍可编辑和裁剪。", "splitTooClose": "分割点之间至少保留 0.1 秒。", "splitBadTime": "请输入相邻分割点内的 mm:ss.mmm，已保留原值。", "splitExcess": "多出的文件设为「无音轨」，可在音频列表中指派。", "splitRuler": "时间轴：方向键定位，回车添加切点，空格播放／暂停", "audioLocationHint": "默认保存在应用数据目录中的 PMCO Audio。手动选择后直接使用所选文件夹；旧位置有文件时可选择是否复制并合并，原文件保留。此设置仅用于本机。", "audioLocationMergeAsk": "是否将旧位置的音频复制并合并到所选文件夹？选择「仅更改位置」会保留旧文件但不复制，相关音频可能显示缺失。原文件始终保留。", "audioLocationMerge": "复制并合并", "audioLocationSwitch": "仅更改位置", "audioLocationConflict": "目标位置存在同路径但内容不同的文件，未覆盖文件，保存位置保持不变。"});
   /* Missing medium is a legacy CD. Medium never replaces musical form (type). */
+  Object.assign(I18N.en, {condition: "Media condition", navMore: "More"});
+  Object.assign(I18N.ja, {condition: "メディアの状態", navMore: "その他"});
+  Object.assign(I18N.zh, {condition: "媒介品相", navMore: "更多"});
   var MEDIA = ["cd", "vinyl", "cassette", "sacd", "dvd", "bluray", "other"];
   var SHELF_MEDIA = ["cd", "vinyl", "cassette", "sacd", "dvd-bluray", "other"];
   var MEDIUM_FIELDS = { recordSize: ["vinyl"], recordSpeed: ["vinyl"], recordColour: ["vinyl"], matrixRunout: MEDIA.slice(), tapeType: ["cassette"], noiseReduction: ["cassette"], sacdHybrid: ["sacd"], audioPrograms: ["sacd", "dvd", "bluray"] };
   var CD_PRESSING_FIELDS = ["ifpiMastering", "ifpiMould", "hub"];
   function detailFitsMedium(field, medium) {
+    if (field === "hub") return medium === "cd";
     var types = MEDIUM_FIELDS[field];
     return types ? types.indexOf(medium) >= 0 : CD_PRESSING_FIELDS.indexOf(field) < 0 || medium === "cd" || medium === "sacd";
   }
@@ -2801,9 +2868,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         l === "ja" ? I18N[l][key].replace(/CD/g, "メディア").replace(/枚/g, "点") : I18N[l][key].replace(/张\s*CD/g, "件媒介").replace(/CD/g, "媒介");
     });
   });
-  Object.assign(I18N.en, { "addMedium.cd": "Add a CD", "addMedium.vinyl": "Add a vinyl record", "addMedium.cassette": "Add a cassette", "addMedium.sacd": "Add an SACD", "addMedium.dvd": "Add a DVD", "addMedium.bluray": "Add a Blu-ray", audioAddFolder: "Add audio from a folder…", audioFolderHint: "Choose a folder on this computer, USB drive or SD card. Supported audio files in its subfolders are copied locally; the originals stay in place." });
-  Object.assign(I18N.ja, { "addMedium.cd": "CDを追加", "addMedium.vinyl": "レコードを追加", "addMedium.cassette": "カセットを追加", "addMedium.sacd": "SACDを追加", "addMedium.dvd": "DVDを追加", "addMedium.bluray": "Blu-rayを追加", audioAddFolder: "フォルダーから音声を追加…", audioFolderHint: "このコンピューター、USB、SDカードのフォルダーを選びます。サブフォルダー内の対応音声ファイルをコピーします。元のファイルは保持されます。" });
-  Object.assign(I18N.zh, { "addMedium.cd": "添加一张CD", "addMedium.vinyl": "添加一张黑胶", "addMedium.cassette": "添加一盒磁带", "addMedium.sacd": "添加一张SACD", "addMedium.dvd": "添加一张DVD", "addMedium.bluray": "添加一张蓝光", audioAddFolder: "从文件夹添加音频…", audioFolderHint: "选择本机、USB或SD卡中的文件夹；将复制其中及子文件夹内支持的音频文件，原文件保持不变。" });
+  Object.assign(I18N.en, { "addMedium.cd": "Add a CD", "addMedium.vinyl": "Add a vinyl record", "addMedium.cassette": "Add a cassette", "addMedium.sacd": "Add an SACD", "addMedium.dvd": "Add a DVD", "addMedium.bluray": "Add a Blu-ray" });
+  Object.assign(I18N.ja, { "addMedium.cd": "CDを追加", "addMedium.vinyl": "レコードを追加", "addMedium.cassette": "カセットを追加", "addMedium.sacd": "SACDを追加", "addMedium.dvd": "DVDを追加", "addMedium.bluray": "Blu-rayを追加" });
+  Object.assign(I18N.zh, { "addMedium.cd": "添加一张CD", "addMedium.vinyl": "添加一张黑胶", "addMedium.cassette": "添加一盒磁带", "addMedium.sacd": "添加一张SACD", "addMedium.dvd": "添加一张DVD", "addMedium.bluray": "添加一张蓝光" });
   Object.assign(I18N.en, { "medium.dvd-bluray": "DVD / Blu-ray", "addMedium.dvd-bluray": "Add a DVD/Blu-ray", statsMedia: "Physical items by medium", audioFromMedium: "Audio from {medium}" });
   Object.assign(I18N.ja, { "medium.dvd-bluray": "DVD / Blu-ray", "addMedium.dvd-bluray": "DVD／Blu-rayを追加", statsMedia: "メディア別の点数", audioFromMedium: "{medium}の音声" });
   Object.assign(I18N.zh, { "medium.dvd-bluray": "DVD／蓝光", "addMedium.dvd-bluray": "添加一张DVD／蓝光", statsMedia: "各类实体媒介数量", audioFromMedium: "音频来自{medium}" });
@@ -2837,7 +2904,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var number = same.length === items.length ? cd._itemNumber || (releaseSet(cd) && cd.set.disc) || index + 1 : index + 1;
     return mediumText(cd) + " " + Math.max(1, number);
   }
-  function appendMediumFacts(facts, cd) { Object.keys(MEDIUM_FIELDS).forEach(function (f) { if (cd[f] && (f === "matrixRunout" || MEDIUM_FIELDS[f].indexOf(mediumOf(cd)) >= 0)) { facts.appendChild(el("dt", null, t(f === "matrixRunout" && mediumOf(cd) === "vinyl" ? "vinylMatrix" : f))); facts.appendChild(el("dd", null, cd[f])); } }); }
+  function appendMediumFacts(facts, cd) { if (cd.condition && String(cd.condition).trim()) { facts.appendChild(el("dt", null, t("mediaCondition"))); facts.appendChild(el("dd", null, cd.condition)); } Object.keys(MEDIUM_FIELDS).forEach(function (f) { if (cd[f] && (f === "matrixRunout" || MEDIUM_FIELDS[f].indexOf(mediumOf(cd)) >= 0)) { facts.appendChild(el("dt", null, t(f === "matrixRunout" && mediumOf(cd) === "vinyl" ? "vinylMatrix" : f))); facts.appendChild(el("dd", null, cd[f])); } }); }
   function setupMediaEditor() {
     var select = $("medium"), value = select.value || "cd"; select.textContent = "";
     MEDIA.forEach(function (m) { var o = el("option", null, t("medium." + m)); o.value = m; select.appendChild(o); });
@@ -2870,6 +2937,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function updateMediaEditor() {
     var m = $("medium").value || "cd"; $("medium-name-field").hidden = m !== "other";
     Object.keys(MEDIUM_FIELDS).concat(CD_PRESSING_FIELDS).forEach(function (f) { $(f).closest(".field").hidden = !detailFitsMedium(f, m); });
+    var conditionField = $("condition").closest(".field");
+    if (m === "cd") $("hub-condition").appendChild(conditionField);
+    else $("medium-details").appendChild(conditionField);
+    $("hub-condition").hidden = m !== "cd";
     var cd = { medium:m, mediumName:$("mediumName").value.trim() };
     $("albumOverall").querySelector("summary > span").textContent = formMusicOnly ? t("musicInformation") : mediumSection(cd, false);
     $("albumOverall").querySelector("[data-i18n=workInheritHint]").textContent = t(formMusicOnly ? "musicInheritHint" : "workInheritHint");
@@ -3327,6 +3398,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function closeWin(id, force) {
     var ov = $("win-" + id);
     if (ov.hidden || ov.classList.contains("is-closing")) return;
+    if (id === "split" && !force) { requestSplitClose(); return; }
+    if (id === "cd" && splitEditor) { requestSplitClose(); return; }
     if (id === "recovery" && !force) return;
     if (id === "settings" && audioLocationBusy) return;
     if (id === "settings") closeSettingsHelp();
@@ -4404,7 +4477,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     return s;
   }
   /* Optional fields in the form's "Disc details" section, besides label, issuer and the years. */
-  var DETAIL_FIELDS = ["medium", "mediumName"].concat(Object.keys(MEDIUM_FIELDS)).concat(["catalogNo", "manufacturer", "madeIn", "recordingVenue", "spars", "barcode", "ifpiMastering", "ifpiMould", "hub", "type"]);
+  var DETAIL_FIELDS = ["medium", "mediumName"].concat(Object.keys(MEDIUM_FIELDS)).concat(["catalogNo", "manufacturer", "madeIn", "recordingVenue", "spars", "barcode", "ifpiMastering", "ifpiMould", "hub", "condition", "type"]);
 
   /* Physical multi-CD releases use cd.set. meta.albums remains Favorites. Shared values are
      materialized on each CD so older versions can still read every disc independently. */
@@ -6393,6 +6466,42 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     });
   })();
 
+  /* The compact bar uses the same navigation and actions as the desktop sidebar. */
+  function compactActive() { return getComputedStyle($("compact-current").parentElement).display !== "none"; }
+  function closeCompactNav(focus) {
+    document.querySelector(".side").classList.remove("nav-open", "more-open");
+    ["compact-current", "compact-more"].forEach(function (id) { $(id).setAttribute("aria-expanded", "false"); });
+    if (focus) $(focus).focus({preventScroll:true});
+  }
+  function updateCompactNav() {
+    var chip = $("chip-" + currentAlbum), label = chip && chip.querySelector(".nm");
+    $("compact-current").querySelector(".nm").textContent = label ? label.textContent.replace(/^[▾▸]\s*/, "") : t("allCds");
+    $("compact-current").setAttribute("aria-label", t("navLabel") + ": " + $("compact-current").textContent);
+  }
+  ["compact-current", "compact-more"].forEach(function (id) {
+    $(id).addEventListener("click", function () {
+      var side = document.querySelector(".side"), cls = id === "compact-current" ? "nav-open" : "more-open", open = !side.classList.contains(cls);
+      closeCompactNav();
+      if (open) { side.classList.add(cls); $(id).setAttribute("aria-expanded", "true"); }
+    });
+    $(id).addEventListener("keydown", function (e) { if (e.key === "ArrowDown") { e.preventDefault(); if ($(id).getAttribute("aria-expanded") !== "true") $(id).click(); var host = $(id === "compact-current" ? "albums" : "compact-actions"); var first = qsa("button", host).find(function (n) { return n.offsetParent; }); if (first) first.focus(); } });
+  });
+  document.querySelector(".side").addEventListener("keydown", function (e) {
+    if (!compactActive()) return;
+    var cls = document.querySelector(".side").classList.contains("nav-open") ? "compact-current" : "compact-more";
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeCompactNav(cls); }
+    if (!e.altKey && ["ArrowDown","ArrowUp","Home","End"].indexOf(e.key) >= 0 && !e.target.closest(".compact-nav")) {
+      var nodes = qsa("button", $(cls === "compact-current" ? "albums" : "compact-actions")).filter(function (n) { return n.offsetParent && !n.disabled; });
+      var at = nodes.indexOf(e.target), next = e.key === "Home" ? 0 : e.key === "End" ? nodes.length-1 : (at + (e.key === "ArrowDown" ? 1 : -1) + nodes.length) % nodes.length;
+      e.preventDefault(); if (nodes[next]) nodes[next].focus();
+    }
+  });
+  $("albums").addEventListener("click", function (e) { if (compactActive() && e.target.closest('button[id="chip-' + currentAlbum + '"]') && !e.target.closest('.chev')) { closeCompactNav("compact-current"); } });
+  ["open-stats","open-settings"].forEach(function (id) { $(id).addEventListener("click", function () { closeCompactNav(); }); });
+  document.addEventListener("pointerdown", function (e) { if (!e.target.closest(".side")) closeCompactNav(); });
+  document.addEventListener("focusin", function (e) { if (!e.target.closest(".side")) closeCompactNav(); });
+  window.addEventListener("resize", function () { if (!compactActive()) closeCompactNav(); });
+
   function renderAlbums() {
     var bar = $("albums");
     bar.textContent = "";
@@ -6526,7 +6635,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     bar.appendChild(group);
 
     /* Music (desktop app only): all CDs with audio here, and the saved playlists. */
-    if (!withMusic) return;
+    if (!withMusic) { updateCompactNav(); return; }
     bar.appendChild(el("p", "side-h", t("musicHead")));
     bar.appendChild(chip("music", "♪ " + t("musicNav"), musicCds().length));
     var plOpenNow = plOpen;
@@ -6555,6 +6664,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     np.addEventListener("click", function () { openAlbumDlg("new", null, "playlist"); });
     plGroup.appendChild(np);
     bar.appendChild(plGroup);
+    updateCompactNav();
   }
   /* Put a favorite (kind "fav") or playlist ("pl") before or after another one of the same kind. */
   function moveChip(kind, key, targetKey, before) {
@@ -7321,10 +7431,10 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var button = $("audio-location-choose"); audioLocationBusy = true; button.disabled = true;
     $("audio-location-status").textContent = t("audioLocationBusy");
     try {
-      var root = await AudioLib.call("choose_audio_location");
+      var root = await AudioLib.call("choose_audio_location", {prompt:t("audioLocationMergeAsk"),yes:t("audioLocationMerge"),no:t("audioLocationSwitch"),cancel:t("cancel")});
       if (root) {
         var wasPlaying = !audioEl.paused, position = audioEl.currentTime;
-        audioEl.pause(); AudioLib.root = root;
+        audioEl.pause(); AudioLib.root = root; AudioLib.present = {};
         if (currentEntry()) {
           audioEl.src = AudioLib.url(currentEntry().file);
           audioEl.addEventListener("loadedmetadata", function resume() { audioEl.currentTime = position; if (wasPlaying) audioEl.play().catch(function () {}); }, {once:true});
@@ -7332,7 +7442,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         $("audio-location-path").textContent = root;
       }
       $("audio-location-status").textContent = root ? t("audioLocationDone") : "";
-    } catch (e) { $("audio-location-status").textContent = t("audioLocationFailed"); }
+    } catch (e) { $("audio-location-status").textContent = t(String(e) === "audio_location_conflict" ? "audioLocationConflict" : "audioLocationFailed"); }
     finally { audioLocationBusy = false; button.disabled = false; }
   });
 
@@ -9335,7 +9445,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     renderFormAudio();
     var imported = [];
     try {
-      var added = await AudioLib.call(source === "folder" ? "add_audio_folder" : "add_audio", { cdId: draft.id });
+      var added = await AudioLib.call("add_audio", { cdId: draft.id });
       imported = (added || []).map(function (a) { return a.file; });
       if (formAudio !== draft) { await cleanDraftAudio((added || []).map(function (a) { return a.file; })); return; }
       draft.copied.push.apply(draft.copied, imported);
@@ -9397,10 +9507,233 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     var add = el("button", "linkbtn", t("audioAdd")); add.type = "button"; add.id = "form-audio-add";
     add.disabled = draft.busy || draft.saving;
     add.addEventListener("click", function () { addFormAudio("files"); }); actions.appendChild(add);
-    var folder = el("button", "linkbtn", t("audioAddFolder")); folder.type = "button"; folder.id = "form-audio-folder";
-    folder.disabled = draft.busy || draft.saving; folder.addEventListener("click", function () { addFormAudio("folder"); }); actions.appendChild(folder); box.appendChild(actions);
+    var split = el("button", "linkbtn", t("splitAdd")); split.type = "button"; split.id = "form-audio-split";
+    split.disabled = draft.busy || draft.saving; split.addEventListener("click", openAudioSplit); actions.appendChild(split); box.appendChild(actions);
     renderDiscButtons();
   }
+/* ---------- sample-aligned audio split editor (WAV / FLAC) ---------- */
+var splitEditor = null, splitConfirmAction = null, splitSerial = 0;
+function splitTime(frame, rate) {
+  var ms = Math.round(frame * 1000 / rate), minutes = Math.floor(ms / 60000);
+  return minutes + ":" + String(Math.floor(ms / 1000) % 60).padStart(2, "0") + "." + String(ms % 1000).padStart(3, "0");
+}
+function splitParse(value, rate) {
+  var m = /^(\d+):([0-5]\d)(?:\.(\d{1,3}))?$/.exec(value.trim());
+  return m ? Math.round((Number(m[1]) * 60 + Number(m[2]) + Number((m[3] || "").padEnd(3, "0")) / 1000) * rate) : NaN;
+}
+function splitPart(start, end, keep, id) { return {start:start, end:end, keep:keep, id:id || "s" + (++splitSerial)}; }
+function splitNormalize(parts, rate) {
+  var min = Math.ceil(rate / 10), out = parts.filter(function (p) { return p.end > p.start; });
+  for (var i = 0; i < out.length && out.length > 1;) {
+    if (out[i].end - out[i].start >= min) { i++; continue; }
+    if (i) { out[i-1].end = out[i].end; out.splice(i, 1); }
+    else { out[1].start = out[0].start; out.shift(); }
+  }
+  return out;
+}
+function splitAuto(frames, rate, durations) {
+  var parts = [], warnings = [], at = 0;
+  durations.forEach(function (d, i) { if (!d) warnings.push(t("splitMissing", {n:i+1})); });
+  if (!durations.some(function (d) { return d > 0; })) return {parts:[splitPart(0,frames,true)], warnings:warnings};
+  for (var i = 0; i < durations.length && at < frames; i++) {
+    var d = Math.round(durations[i] * rate); if (!d) continue;
+    if (frames - at < d - rate / 2) {
+      if (!parts.length) { parts.push(splitPart(0,frames,true)); warnings.push(t("splitShort", {needed:splitTime(d,rate), actual:splitTime(frames,rate)})); at=frames; }
+      else { warnings.push(t("splitRemaining", {n:i+1})); }
+      break;
+    }
+    var end = Math.min(at + d, frames); parts.push(splitPart(at,end,true)); at=end;
+  }
+  if (at < frames) parts.push(splitPart(at,frames,false));
+  return {parts:splitNormalize(parts,rate), warnings:warnings};
+}
+function splitMove(parts, ids, delta, frames, rate) {
+  var selected = parts.filter(function (p) { return ids.indexOf(p.id) >= 0; });
+  if (!selected.length) return parts;
+  delta = Math.round(Math.max(-selected[0].start, Math.min(frames-selected[selected.length-1].end,delta)));
+  if (!delta) return clone(parts);
+  var moved = selected.map(function (p) { return splitPart(p.start+delta,p.end+delta,p.keep,p.id); });
+  var background = parts.map(function (p) { return splitPart(p.start,p.end,ids.indexOf(p.id) < 0 && p.keep); });
+  moved.forEach(function (m) {
+    var next=[];
+    background.forEach(function (p) {
+      if (p.end <= m.start || p.start >= m.end) { next.push(p); return; }
+      if (p.start < m.start) next.push(splitPart(p.start,m.start,p.keep));
+      if (p.end > m.end) next.push(splitPart(m.end,p.end,p.keep));
+    });
+    next.push(m); background=next.sort(function (a,b) { return a.start-b.start; });
+  });
+  return splitNormalize(background,rate);
+}
+function splitSnapshot(ed) { return {parts:clone(ed.parts), selected:Array.from(ed.selected), point:ed.point}; }
+function splitRestore(ed, state) { ed.parts=clone(state.parts); ed.selected=new Set(state.selected); ed.point=state.point; renderSplit(); }
+function splitEdit(change) {
+  var ed=splitEditor; if (!ed || ed.writing) return;
+  var old=splitSnapshot(ed); change(ed);
+  if (JSON.stringify(old.parts)===JSON.stringify(ed.parts)) return;
+  ed.undo.push(old); if (ed.undo.length > 100) ed.undo.shift(); ed.redo=[]; renderSplit();
+}
+function splitUndo(redo) {
+  var ed=splitEditor; if (!ed || ed.writing) return;
+  var from=redo?ed.redo:ed.undo, to=redo?ed.undo:ed.redo;
+  if (!from.length) return; to.push(splitSnapshot(ed)); splitRestore(ed,from.pop());
+}
+function splitChoose(id, event) {
+  var ed=splitEditor, index=ed.parts.findIndex(function (p) { return p.id===id; });
+  if (event.shiftKey && ed.anchor) {
+    var anchor=ed.parts.findIndex(function (p) { return p.id===ed.anchor; });
+    ed.selected=new Set(ed.parts.slice(Math.min(anchor,index),Math.max(anchor,index)+1).map(function (p) { return p.id; }));
+  } else if (event.ctrlKey || event.metaKey) { if (ed.selected.has(id)) ed.selected.delete(id); else ed.selected.add(id); ed.anchor=id; }
+  else { ed.selected=new Set([id]); ed.anchor=id; }
+  ed.point=null; renderSplit();
+}
+function splitSeek(frame, play, end) {
+  var ed=splitEditor, audio=$("split-player"); if (!ed) return;
+  ed.head=Math.max(0,Math.min(ed.info.frames,Math.round(frame))); ed.playEnd=end == null ? null : end;
+  try { audio.currentTime=ed.head/ed.info.rate; } catch (e) {}
+  if (play) audio.play().catch(function () { $("split-status").textContent=t("splitPreviewFail"); });
+  splitPlayhead();
+}
+function splitPlayhead() {
+  var ed=splitEditor; if (!ed) return;
+  var audio=$("split-player");
+  if (!audio.paused) ed.head=Math.min(ed.info.frames,Math.round(audio.currentTime*ed.info.rate));
+  if (ed.playEnd != null && ed.head>=ed.playEnd) { audio.pause(); ed.head=ed.playEnd; ed.playEnd=null; }
+  $("split-head").style.left=(ed.head/ed.info.frames*100)+"%";
+  $("split-head-time").textContent=splitTime(ed.head,ed.info.rate);
+  $("split-ruler").setAttribute("aria-valuemax",String(ed.info.frames/ed.info.rate));
+  $("split-ruler").setAttribute("aria-valuenow",String(ed.head/ed.info.rate));
+  $("split-ruler").setAttribute("aria-valuetext",splitTime(ed.head,ed.info.rate));
+}
+function splitSummary(ed) {
+  var dropped=ed.parts.filter(function (p) { return !p.keep; });
+  return t("splitSummary", {files:ed.parts.length-dropped.length, gaps:dropped.length, time:splitTime(dropped.reduce(function (s,p) { return s+p.end-p.start; },0),ed.info.rate)});
+}
+function splitSelectPoint(index) { var ed=splitEditor; ed.point=index; ed.selected.clear(); renderSplit(); $("split-point-time").focus(); }
+function renderSplit() {
+  var ed=splitEditor; if (!ed) return;
+  var rate=ed.info.rate, total=ed.info.frames, timeline=$("split-timeline"), active=document.activeElement, focusId=active && active.dataset.part, focusPoint=active && active.dataset.point;
+  timeline.style.width=(ed.zoom*100)+"%";
+  var band=$("split-band"); band.textContent="";
+  ed.parts.forEach(function (p,i) {
+    var b=el("button","split-part"+(p.keep?"":" is-gap")+(ed.selected.has(p.id)?" is-selected":"")); b.type="button"; b.dataset.part=p.id;
+    b.style.left=(p.start/total*100)+"%"; b.style.width=((p.end-p.start)/total*100)+"%";
+    var label=t(p.keep?"splitKeep":"splitGap")+" · "+splitTime(p.start,rate)+"–"+splitTime(p.end,rate)+" · "+splitTime(p.end-p.start,rate);
+    b.title=label; b.setAttribute("aria-label",label); b.setAttribute("aria-pressed",ed.selected.has(p.id)?"true":"false"); b.disabled=ed.writing;
+    b.appendChild(el("span",null,t(p.keep?"splitKeep":"splitGap"))); b.appendChild(el("small",null,splitTime(p.end-p.start,rate)));
+    b.addEventListener("click",function (e) { if (ed.dragged) {ed.dragged=false;return;} splitChoose(p.id,e); });
+    b.addEventListener("dblclick",function () { splitSeek(p.start,true,p.end); });
+    b.addEventListener("keydown",function (e) {
+      if (e.isComposing) return;
+      if (["ArrowLeft","ArrowRight"].indexOf(e.key)>=0) {
+        e.preventDefault(); var step=e.key==="ArrowLeft"?-1:1;
+        if (e.shiftKey) { splitChoose(ed.parts[Math.max(0,Math.min(ed.parts.length-1,i+step))].id,{shiftKey:true}); }
+        else { if (!ed.selected.has(p.id)) {ed.selected=new Set([p.id]);ed.anchor=p.id;} splitEdit(function (x) {x.parts=splitMove(x.parts,Array.from(x.selected),step*Math.round(rate*(e.altKey?1:0.1)),total,rate);}); }
+      }
+      if (["ArrowUp","ArrowDown"].indexOf(e.key)>=0) {e.preventDefault();var next=ed.parts[Math.max(0,Math.min(ed.parts.length-1,i+(e.key==="ArrowUp"?-1:1)))];var node=qsa(".split-part",band).find(function(n){return n.dataset.part===next.id;});if(node)node.focus();}
+      if (e.key==="Delete" || e.key==="Backspace") {e.preventDefault();if(!ed.selected.size)ed.selected.add(p.id);splitSetKeep(false);}
+    });
+    b.addEventListener("pointerdown",function(e){
+      if(e.button!==0 || ed.writing || e.ctrlKey || e.metaKey || e.shiftKey)return;
+      var start=e.clientX, old=splitSnapshot(ed), ids=ed.selected.has(p.id)?Array.from(ed.selected):[p.id], moved=false, width=timeline.getBoundingClientRect().width;
+      function move(ev){if(Math.abs(ev.clientX-start)<4&&!moved)return; moved=true; ed.parts=splitMove(old.parts,ids,(ev.clientX-start)/width*total,total,rate);ed.selected=new Set(ids);ed.point=null;renderSplit();}
+      function finish(ev){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);if(moved){ed.undo.push(old);ed.redo=[];ed.dragged=true;setTimeout(function(){ed.dragged=false;},0);renderSplit();}}
+      function cancel(){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);splitRestore(ed,old);}
+      window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",cancel);
+    });
+    band.appendChild(b);
+    if (i<ed.parts.length-1) {
+      var point=el("button","split-point"+(ed.point===i?" is-selected":""));point.type="button";point.dataset.point=String(i);point.style.left=(p.end/total*100)+"%";
+      point.setAttribute("aria-label",t("splitPoint")+" "+splitTime(p.end,rate)); point.title=splitTime(p.end,rate); point.disabled=ed.writing;
+      point.addEventListener("click",function(){splitSelectPoint(i);});
+      point.addEventListener("keydown",function(e){if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();ed.point=i;splitEdit(function(x){splitPointMove(x,i,p.end+(e.key==="ArrowLeft"?-1:1)*Math.max(1,Math.round(rate*(e.altKey?0.1:0.001))));});}if(e.key==="Delete"){e.preventDefault();ed.point=i;splitDeletePoint();}});
+      point.addEventListener("pointerdown",function(e){
+        if(e.button!==0||ed.writing)return;e.preventDefault();var old=splitSnapshot(ed),start=e.clientX,width=timeline.getBoundingClientRect().width,moved=false;
+        function move(ev){moved=true;ed.parts=clone(old.parts);ed.point=i;splitPointMove(ed,i,old.parts[i].end+Math.round((ev.clientX-start)/width*total));renderSplit();}
+        function finish(){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);if(moved){ed.undo.push(old);ed.redo=[];}renderSplit();}
+        function cancel(){window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",cancel);splitRestore(ed,old);}
+        window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",cancel);
+      });band.appendChild(point);
+    }
+  });
+  var ruler=$("split-ruler");ruler.textContent="";
+  var ticks=Math.min(128,Math.max(4,Math.round(ed.zoom*6)));
+  for(var i=0;i<=ticks;i++){var tick=el("span",null,splitTime(total*i/ticks,rate).replace(/\.\d+$/,""));tick.style.left=(i/ticks*100)+"%";ruler.appendChild(tick);}
+  $("split-summary").textContent=splitSummary(ed);
+  $("split-warnings").textContent=ed.warnings.join(" ");
+  $("split-undo").disabled=ed.writing||!ed.undo.length;$("split-redo").disabled=ed.writing||!ed.redo.length;
+  $("split-drop").disabled=$("split-keep").disabled=$("split-preview").disabled=ed.writing||!ed.selected.size;
+  $("split-point-row").hidden=ed.point==null;
+  if(ed.point!=null){var p=ed.parts[ed.point];if(p){$("split-point-time").value=splitTime(p.end,rate);$("split-point-lengths").textContent=splitTime(p.end-p.start,rate)+" / "+splitTime(ed.parts[ed.point+1].end-p.end,rate);}}
+  $("split-confirm").disabled=ed.writing||!ed.parts.some(function(p){return p.keep;});
+  $("split-edit-controls").disabled=ed.writing;$("split-progress").hidden=!ed.writing;$("split-zoom-value").textContent=ed.zoom+"×";
+  splitPlayhead();
+  if(focusId){var node=qsa(".split-part",band).find(function(n){return n.dataset.part===focusId;});if(node)node.focus({preventScroll:true});}
+  else if(focusPoint!=null){var pointNode=qsa(".split-point",band).find(function(n){return n.dataset.point===focusPoint;});if(pointNode)pointNode.focus({preventScroll:true});}
+}
+function splitSetKeep(keep){splitEdit(function(ed){ed.parts.forEach(function(p){if(ed.selected.has(p.id))p.keep=keep;});});}
+function splitPointMove(ed,index,frame){var min=Math.ceil(ed.info.rate/10),left=ed.parts[index],right=ed.parts[index+1];if(!left||!right)return;frame=Math.round(Math.max(left.start+min,Math.min(right.end-min,frame)));left.end=right.start=frame;}
+function splitAddPoint(){var ed=splitEditor;if(!ed)return;var at=Math.round(ed.head),min=Math.ceil(ed.info.rate/10);splitEdit(function(x){var i=x.parts.findIndex(function(p){return p.start+min<=at&&p.end-min>=at;});if(i<0){$("split-status").textContent=t("splitTooClose");return;}var p=x.parts[i];x.parts.splice(i,1,splitPart(p.start,at,p.keep),splitPart(at,p.end,p.keep));x.point=i;x.selected.clear();});}
+function splitDeletePoint(){splitEdit(function(ed){var i=ed.point;if(i==null||!ed.parts[i+1])return;var a=ed.parts[i],b=ed.parts[i+1];ed.parts.splice(i,2,splitPart(a.start,b.end,a.keep||b.keep));ed.point=null;ed.selected.clear();});}
+function askSplit(text,action,label){splitConfirmAction=action;$("split-ask-text").textContent=text;$("split-ask-yes").textContent=t(label||"discardChanges");openWin("split-confirm");}
+async function requestSplitClose(){var ed=splitEditor;if(!ed||ed.cancelling)return;askSplit(t(ed.writing?"splitCancelAsk":"splitDiscardAsk"),async function(){ed.cancelling=true;try{await AudioLib.call("cancel_audio_split",{id:ed.info.id});finishSplit();}catch(e){ed.cancelling=false;$("split-status").textContent=t("splitError");}},"splitDiscard");}
+function finishSplit(){var ed=splitEditor;if(!ed)return;var player=$("split-player");player.pause();player.removeAttribute("src");player.load();ed.draft.busy=false;splitEditor=null;closeWin("split",true);renderFormAudio();renderDiscButtons();}
+async function openAudioSplit(){
+  var draft=formAudio;if(!draft||draft.busy||draft.saving||splitEditor)return;
+  var works=readWorks();if(!Array.isArray(works)){setErr("works",t("errDuration"));if(works.bad)focusCdError(works.bad);return;}
+  draft.busy=true;renderFormAudio();
+  try{
+    var info=await AudioLib.call("prepare_audio_split",{cdId:draft.id});
+    if(!info){draft.busy=false;renderFormAudio();return;}
+    if(formAudio!==draft){await AudioLib.call("cancel_audio_split",{id:info.id});return;}
+    var tracks=discTracks({medium:$("medium").value,sides:formSides,works:works}),durations=tracks.map(function(tr){return tr.duration&&DURATION.test(tr.duration)?toSeconds(tr.duration):0;}),auto=splitAuto(info.frames,info.rate,durations);
+    splitEditor={info:info,draft:draft,parts:auto.parts,warnings:auto.warnings,durations:durations,selected:new Set(),anchor:null,point:null,head:0,playEnd:null,zoom:1,undo:[],redo:[],writing:false};
+    $("split-name").textContent=info.name;$("split-status").textContent="";$("split-player").src=window.__TAURI__.core.convertFileSrc(info.id,"pmco-audio");
+    renderSplit();openWin("split");
+  }catch(e){draft.busy=false;renderFormAudio();toast(t(String(e)==="split_busy"?"splitBusy":"splitInvalid"));}
+}
+async function writeAudioSplit(){
+  var ed=splitEditor;if(!ed||ed.writing)return;
+  askSplit(splitSummary(ed)+" "+t("splitDraftHint"),async function(){
+    ed.writing=true;$("split-player").pause();$("split-status").textContent=t("splitWriting");renderSplit();
+    try{
+      await AudioLib.call("start_audio_split",{id:ed.info.id,segments:ed.parts.filter(function(p){return p.keep;}).map(function(p){return {start:p.start,end:p.end};})});
+      var status;
+      do{await new Promise(function(resolve){setTimeout(resolve,200);});if(splitEditor!==ed)return;status=await AudioLib.call("audio_split_status",{id:ed.info.id});$("split-progress").value=status.progress;}while(status.state==="writing");
+      if(status.state==="cancelled"||ed.cancelling)return;
+      if(status.state!=="done")throw status.code||"split_io";
+      var added=await AudioLib.call("adopt_audio_split",{id:ed.info.id});
+      if(formAudio!==ed.draft||splitEditor!==ed||ed.cancelling){await cleanDraftAudio(added.map(function(a){return a.file;}));if(splitEditor===ed&&!ed.cancelling)finishSplit();return;}
+      var used={};ed.draft.list.forEach(function(a){if(a.track)used[a.track]=true;});
+      var free=discTracks({medium:$("medium").value,sides:formSides,works:formAudioWorks()}).map(function(tr){return tr.no;}).filter(function(n){return !used[n];});
+      var excess=false;
+      added.forEach(function(a){a.track=free.shift()||0;if(!a.track)excess=true;ed.draft.copied.push(a.file);ed.draft.list.push(a);});
+      finishSplit();if(excess)toast(t("splitExcess"));
+    }catch(e){if(splitEditor!==ed)return;ed.writing=false;$("split-status").textContent=t(String(e)==="split_busy"?"splitBusy":String(e)==="split_changed"?"splitChanged":"splitError");renderSplit();}
+  },"splitWrite");
+}
+$("split-player").addEventListener("timeupdate",splitPlayhead);
+$("split-player").addEventListener("error",function(){if(splitEditor)$("split-status").textContent=t("splitPreviewFail");});
+$("split-player").addEventListener("play",function(){if(splitEditor)audioEl.pause();});
+$("split-ruler").addEventListener("click",function(e){var ed=splitEditor;if(ed)splitSeek((e.clientX-this.getBoundingClientRect().left)/this.getBoundingClientRect().width*ed.info.frames,false);});
+$("split-ruler").addEventListener("dblclick",function(){splitAddPoint();});
+$("split-ruler").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed||e.isComposing)return;if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();splitSeek(ed.head+(e.key==="ArrowLeft"?-1:1)*ed.info.rate*(e.altKey?1:0.1),false);}if(e.key==="Enter"){e.preventDefault();splitAddPoint();}if(e.key===" "){e.preventDefault();if($("split-player").paused)splitSeek(ed.head,true);else $("split-player").pause();}});
+$("split-point-time").addEventListener("change",function(){var ed=splitEditor;if(!ed)return;var at=splitParse(this.value,ed.info.rate),i=ed.point,min=Math.ceil(ed.info.rate/10);if(!Number.isFinite(at)||i==null||at<ed.parts[i].start+min||at>ed.parts[i+1].end-min){this.value=splitTime(ed.parts[i].end,ed.info.rate);$("split-status").textContent=t("splitBadTime");return;}splitEdit(function(x){splitPointMove(x,i,at);});});
+$("split-select-all").addEventListener("click",function(){var ed=splitEditor;ed.selected=new Set(ed.parts.map(function(p){return p.id;}));ed.point=null;renderSplit();});
+$("split-drop").addEventListener("click",function(){splitSetKeep(false);});$("split-keep").addEventListener("click",function(){splitSetKeep(true);});
+$("split-add-point").addEventListener("click",splitAddPoint);$("split-delete-point").addEventListener("click",splitDeletePoint);
+$("split-undo").addEventListener("click",function(){splitUndo(false);});$("split-redo").addEventListener("click",function(){splitUndo(true);});
+$("split-preview").addEventListener("click",function(){var ed=splitEditor,p=ed.parts.find(function(p){return ed.selected.has(p.id);});if(p)splitSeek(p.start,true,p.end);});
+$("split-point-play").addEventListener("click",function(){var ed=splitEditor;if(ed.point!=null)splitSeek(ed.parts[ed.point].end,true);});
+$("split-reset").addEventListener("click",function(){askSplit(t("splitResetAsk"),function(){splitEdit(function(ed){var auto=splitAuto(ed.info.frames,ed.info.rate,ed.durations);ed.parts=auto.parts;ed.warnings=auto.warnings;ed.selected.clear();ed.point=null;});},"splitReset");});
+$("split-confirm").addEventListener("click",writeAudioSplit);$("split-close").addEventListener("click",requestSplitClose);
+$("split-ask-no").addEventListener("click",function(){splitConfirmAction=null;closeWin("split-confirm");});
+$("split-ask-yes").addEventListener("click",function(){var action=splitConfirmAction;splitConfirmAction=null;closeWin("split-confirm",true);if(action)action();});
+function splitZoom(amount){var ed=splitEditor;if(!ed||ed.writing)return;var scroller=$("split-scroll"),center=(scroller.scrollLeft+scroller.clientWidth/2)/(scroller.clientWidth*ed.zoom);ed.zoom=Math.max(1,Math.min(32,ed.zoom*amount));renderSplit();scroller.scrollLeft=center*scroller.clientWidth*ed.zoom-scroller.clientWidth/2;}
+$("split-zoom-in").addEventListener("click",function(){splitZoom(2);});$("split-zoom-out").addEventListener("click",function(){splitZoom(0.5);});
+$("split-scroll").addEventListener("wheel",function(e){if(e.ctrlKey||e.metaKey){e.preventDefault();splitZoom(e.deltaY<0?2:0.5);}},{passive:false});
+$("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed||ed.writing||e.isComposing||e.target.matches("input,textarea"))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();splitUndo(e.shiftKey);}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="a"){e.preventDefault();$("split-select-all").click();}});
+
   async function commitFormAudio(draft) {
     if (!draft) return;
     var kept = draft.list.map(function (a) { return a.file; });
@@ -10642,7 +10975,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     groupedPerformers(cd.performers).forEach(function (p) { fact(p.roles.map(roleText).join(" / "), p.name); });
     [["label",cd.label],["issuer",cd.issuer],["recYear",cd.recordingYear],["relYear",cd.releaseYear||cd.year],
       ["catalogNo",cd.catalogNo],["manufacturer",cd.manufacturer],["madeIn",cd.madeIn],["venue",cd.recordingVenue],
-      ["spars",cd.spars],["barcode",cd.barcode],["ifpiMastering",cd.ifpiMastering],["ifpiMould",cd.ifpiMould],["hub",hubText(cd.hub)],["notes",cd.notes]]
+      ["spars",cd.spars],["barcode",cd.barcode],["ifpiMastering",cd.ifpiMastering],["ifpiMould",cd.ifpiMould],["hub",(mediumOf(cd) === "cd" ? hubText(cd.hub) : "")],["notes",cd.notes]]
       .forEach(function (pair) { if (pair[0] === "notes") appendMediumFacts(facts, cd); fact(t(pair[0]), pair[1]); });
     popup.appendChild(facts);
     if ((cd.audio || []).length) {
@@ -10881,7 +11214,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     [["label", cd.label], ["issuer", cd.issuer], ["recYear", cd.recordingYear], ["relYear", cd.releaseYear || cd.year],
      ["catalogNo", cd.catalogNo], ["manufacturer", cd.manufacturer], ["madeIn", cd.madeIn], ["venue", cd.recordingVenue],
      ["spars", cd.spars], ["barcode", cd.barcode], ["ifpiMastering", cd.ifpiMastering], ["ifpiMould", cd.ifpiMould],
-     ["hub", hubText(cd.hub)],
+     ["hub", mediumOf(cd) === "cd" ? hubText(cd.hub) : ""],
      ["notes", cd.notes]].forEach(function (pair) {
       if (pair[0] === "notes") appendMediumFacts(spec, cd);
       if (!pair[1]) return;
@@ -11021,12 +11354,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       cd.recordingYear = recordingYear;
       cd.releaseYear = releaseYear;
       if ($("medium").value === "vinyl") cd.sides = clone(formSides);
-      DETAIL_FIELDS.forEach(function (f) { var v = $(f).value.trim(); if (v) cd[f] = v; });
+      DETAIL_FIELDS.forEach(function (f) { var v = f === "condition" ? $(f).value : $(f).value.trim(); if (v.trim()) cd[f] = v; });
       if (before && mediumGroup(before) === "other" && mediumOf(before) !== "other" && cd.medium === "other" && cd.mediumName === mediumText(before)) {
         cd.medium = before.medium;
         if (!before.mediumName) delete cd.mediumName;
       }
-      if (cd.hub) cd.hub = normalizeHub(cd.hub);
+      if (cd.hub) cd.hub = before && mediumOf(cd) !== "cd" && $("hub").value === hubText(before.hub) ? before.hub : normalizeHub(cd.hub);
       var notes = $("notes").value.trim();
       if (notes) cd.notes = notes;
     }
