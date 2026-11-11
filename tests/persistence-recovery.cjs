@@ -167,7 +167,7 @@ async function main(){
     try{
       await page.evaluate(()=>qa.startEdit(qa.state().cds[0]));await page.locator('#title').fill('Draft must survive');
       state.fail=true;assert.equal(await page.evaluate(async()=>{try{await qa.backend().applySync(qa.backend().snapshot(),[],['one'],[],null,'fixture');return true;}catch{return false;}}),false);
-      assert.equal(state.commands.filter(c=>c.cmd==='remove_cd_audio').length,0);assert.equal(await page.evaluate(()=>qa.state().cds[0].id),'one');
+      assert.equal(state.commands.filter(c=>c.cmd==='remove_audio').length,0);assert.equal(await page.evaluate(()=>qa.state().cds[0].id),'one');
       assert(await page.locator('#win-cd').isVisible());assert.equal(await page.locator('#title').inputValue(),'Draft must survive');
     }finally{await f.close();}
   });
@@ -180,7 +180,7 @@ async function main(){
       await page.locator('#win-detail').waitFor({state:'hidden'});assert.equal(state.doc.cds.length,0);
       state.fail=true;await page.locator('#toast-action').click();
       await page.locator('#toast-action').filter({hasText:'Retry save'}).waitFor();assert.equal(state.doc.cds.length,0);
-      assert.equal(state.commands.filter(c=>c.cmd==='remove_cd_audio').length,0);
+      assert.equal(state.commands.filter(c=>c.cmd==='remove_audio').length,0);
       state.fail=false;await page.locator('#toast-action').click();await page.locator('#card-one').waitFor();
       assert.equal(state.doc.cds[0].id,'one');
     }finally{await f.close();}

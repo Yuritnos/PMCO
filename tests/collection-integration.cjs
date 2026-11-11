@@ -765,7 +765,7 @@ async function main() {
       state.saveFail=true;await page.locator('#submit').click();await page.locator('#submit:not(:disabled)').waitFor();assert.deepEqual(state.doc.cds,cds);
       assert(!state.doc.sync||!state.doc.sync.deleted||!state.doc.sync.deleted['remove-2']);state.saveFail=false;await save(page);
       await page.locator('#toast-action').waitFor();assert.equal(state.doc.cds.length,1);assert(state.doc.sync.deleted['remove-2']);
-      assert.equal(state.commands.filter(c=>c.command==='remove_cd_audio').length,0);
+      assert.equal(state.commands.filter(c=>c.command==='remove_audio').length,0);
       await page.locator('#toast-action').click();await until(()=>state.doc.cds.length===2&&state.doc.meta.albums[0].cdIds.length===2&&state.doc.meta.playlists[0].items.length===1);
       assert.deepEqual(state.doc.cds.find(c=>c.id==='remove-2').audio,cds[1].audio);
     }finally{await f.close();}

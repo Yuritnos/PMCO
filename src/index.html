@@ -15,6 +15,7 @@
 .panel.split-panel { width:min(1000px,100%); }
 #win-split { z-index:70; }
 #win-split-confirm { z-index:75; }
+#win-audio-remove { z-index:70; }
 .split-controls { border:0; padding:0; margin:0; min-width:0; }
 .split-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
 .split-actions button { min-height:36px; }
@@ -1386,7 +1387,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     <audio id="split-player" controls preload="metadata" style="width:100%"></audio>
     <p id="split-warnings" class="hint" role="status"></p>
     <fieldset id="split-edit-controls" class="split-controls">
-      <div class="split-toolbar-row"><div class="split-toolbar" role="toolbar" data-i18n-aria="splitTools"><button type="button" class="iconbtn" id="split-drop" data-icon="drop" data-i18n-aria="splitDrop" data-i18n-title="splitDrop"></button><button type="button" class="iconbtn" id="split-keep" data-icon="keep" data-i18n-aria="splitRestore" data-i18n-title="splitRestore"></button><button type="button" class="iconbtn" id="split-add-point" data-icon="cut" data-i18n-aria="splitAddPoint" data-i18n-title="splitAddPoint"></button><button type="button" class="iconbtn" id="split-undo" data-icon="undo" data-i18n-aria="splitUndo" data-i18n-title="splitUndo"></button><button type="button" class="iconbtn" id="split-redo" data-icon="redo" data-i18n-aria="splitRedo" data-i18n-title="splitRedo"></button><button type="button" class="iconbtn" id="split-reset" data-icon="reset" data-i18n-aria="splitReset" data-i18n-title="splitReset"></button><button type="button" class="iconbtn" id="split-zoom-out" data-icon="zoomOut" data-i18n-aria="splitZoomOut" data-i18n-title="splitZoomOut"></button><button type="button" class="iconbtn" id="split-zoom-in" data-icon="zoomIn" data-i18n-aria="splitZoomIn" data-i18n-title="splitZoomIn"></button></div><div class="split-readouts"><output id="split-zoom-value"></output><output id="split-head-time"></output></div></div>
+      <div class="split-toolbar-row"><div class="split-toolbar" role="toolbar" data-i18n-aria="splitTools"><button type="button" class="iconbtn" id="split-add-point" data-icon="cut" data-i18n-aria="splitAddPoint" data-i18n-title="splitAddPoint"></button><button type="button" class="iconbtn" id="split-drop" data-icon="drop" data-i18n-aria="splitDrop" data-i18n-title="splitDrop"></button><button type="button" class="iconbtn" id="split-keep" data-icon="keep" data-i18n-aria="splitRestore" data-i18n-title="splitRestore"></button><button type="button" class="iconbtn" id="split-reset" data-icon="reset" data-i18n-aria="splitReset" data-i18n-title="splitReset"></button><button type="button" class="iconbtn" id="split-undo" data-icon="undo" data-i18n-aria="splitUndo" data-i18n-title="splitUndo"></button><button type="button" class="iconbtn" id="split-redo" data-icon="redo" data-i18n-aria="splitRedo" data-i18n-title="splitRedo"></button></div><div class="split-readouts"><output id="split-zoom-value"></output><output id="split-head-time"></output></div></div>
       <div class="split-scroll" id="split-scroll"><div class="split-timeline" id="split-timeline"><div id="split-ruler" tabindex="0" role="slider" aria-valuemin="0" aria-valuenow="0" data-i18n-aria="splitRuler"></div><div id="split-band"></div><div id="split-head"></div></div></div>
       <div class="split-actions" id="split-point-row" hidden><label for="split-point-time" data-i18n="splitPoint"></label><input id="split-point-time" class="input" type="text" placeholder="mm:ss.mmm" inputmode="decimal"><output id="split-point-lengths"></output><button type="button" class="btn small quiet" id="split-point-play" data-i18n="splitPlayPoint"></button><button type="button" class="btn small quiet" id="split-delete-point" data-i18n="splitDeletePoint"></button></div>
     </fieldset>
@@ -1396,6 +1397,14 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   </section>
 </div>
 <div class="overlay" id="win-split-confirm" hidden><section class="panel" role="dialog" aria-modal="true" aria-labelledby="split-ask-text"><p id="split-ask-text"></p><div class="split-actions"><button type="button" class="btn quiet" id="split-ask-no" data-i18n="cancel">Cancel</button><button type="button" class="btn" id="split-ask-yes"></button></div></section></div>
+
+<div class="overlay" id="win-audio-remove" hidden>
+  <section class="panel narrow" role="dialog" aria-modal="true" aria-labelledby="audio-remove-head">
+    <div class="panel-head"><h2 id="audio-remove-head" data-i18n="audioRemoveHead">Remove audio?</h2></div>
+    <p id="audio-remove-text" style="overflow-wrap:anywhere"></p><p class="err" id="audio-remove-error" role="alert"></p>
+    <div class="split-actions"><button type="button" class="btn quiet" id="audio-remove-cancel" data-i18n="cancel" data-autofocus>Cancel</button><button type="button" class="btn danger" id="audio-remove-confirm" data-i18n="remove">Remove</button></div>
+  </section>
+</div>
 
 <div class="overlay" id="win-cd" hidden>
   <section class="panel cd-editor-panel" role="dialog" aria-modal="true" aria-labelledby="add-h">
@@ -2830,6 +2839,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   Object.assign(I18N.en, {"splitAdd": "+ Add audio files and trim…", "splitTitle": "Trim audio", "splitKeep": "Keep", "splitGap": "Discard", "splitPoint": "Split point", "splitDrop": "Set as discarded", "splitRestore": "Keep selected", "splitAddPoint": "Add split point", "splitDeletePoint": "Delete split point", "splitPlayPoint": "Play from point", "splitUndo": "Undo", "splitRedo": "Redo", "splitReset": "Restore automatic split", "splitZoomIn": "Zoom in", "splitZoomOut": "Zoom out", "splitWrite": "Add to audio draft", "splitSummary": "Will write {files} files; discard {gaps} segments totalling {time}.", "splitMissing": "Entry {n} has no duration and was skipped.", "splitRemaining": "Not enough audio for entry {n} and later entries. The remainder is discarded.", "splitShort": "The first duration is {needed}, but the audio is only {actual}. The whole file is kept.", "splitHelp": "Click or drag the ruler or audio strip to seek; double-click to add a split point. Ctrl/Cmd toggles selection; Shift selects a range. Alt+drag or arrow keys moves selected segments. Drag a boundary or enter its time to adjust it. Ctrl+wheel zooms around the pointer.", "splitDraftHint": "Files stay in this draft until you save the release.", "splitDiscardAsk": "Discard this split session? Saved audio and the source file will remain unchanged.", "splitCancelAsk": "Cancel audio writing and discard this split session?", "splitDiscard": "Discard split session", "splitResetAsk": "Restore automatic splitting? Manual edits and discarded regions will be replaced.", "splitWriting": "Writing retained segments…", "splitInvalid": "Cannot read a valid duration. Choose an uncompressed PCM/float WAV or a FLAC file with a known duration.", "splitError": "Audio could not be written. New files were cleaned up; your source is unchanged. Try again.", "splitBusy": "Another audio task is running. Finish or cancel it first.", "splitChanged": "The source file changed. Close this session and choose it again.", "splitPreviewFail": "Preview is unavailable for this file. You can still edit and split it.", "splitTooClose": "Leave at least 0.1 seconds between split points.", "splitBadTime": "Enter mm:ss.mmm within the neighbouring split points. The previous value was kept.", "splitExcess": "Extra files have no track assigned. Use the audio list to assign them.", "splitRuler": "Timeline: arrows seek, Enter adds a point, Space plays or pauses", "audioLocationHint": "Default audio is kept in PMCO Audio in the app data folder. A chosen folder is used directly. If the old folder contains files, choose whether to copy and merge them. Originals stay in place. This setting is local to this computer.", "audioLocationMergeAsk": "Copy and merge audio from the previous folder into the selected folder? Choose “Switch only” to leave files at the old location; those files may appear missing until copied. Originals are always kept.", "audioLocationMerge": "Copy and merge", "audioLocationSwitch": "Switch only", "audioLocationConflict": "A different file already uses the same path in the destination. Nothing was replaced; the audio location is unchanged.", "splitTools": "Audio editing tools"});
   Object.assign(I18N.ja, {"splitAdd": "＋音声ファイルを追加して分割…", "splitTitle": "音声を分割", "splitKeep": "保持", "splitGap": "破棄", "splitPoint": "分割点", "splitDrop": "破棄にする", "splitRestore": "選択区間を保持", "splitAddPoint": "分割点を追加", "splitDeletePoint": "分割点を削除", "splitPlayPoint": "分割点から再生", "splitUndo": "元に戻す", "splitRedo": "やり直す", "splitReset": "自動分割に戻す", "splitZoomIn": "拡大", "splitZoomOut": "縮小", "splitWrite": "音声の下書きに追加", "splitSummary": "{files}ファイルを書き出し、{gaps}区間（計{time}）を破棄します。", "splitMissing": "項目{n}は長さがないため分割計算から除外しました。", "splitRemaining": "項目{n}以降の長さが足りません。残りは破棄されます。", "splitShort": "最初の長さは{needed}、音声は{actual}です。ファイル全体を保持します。", "splitHelp": "目盛りや音声バーをクリック・ドラッグして移動、ダブルクリックで分割点を追加します。Ctrl/Cmdで複数、Shiftで範囲選択。Alt＋ドラッグまたは矢印キーで区間を移動。境界をドラッグ、または時刻を入力して調整。Ctrl＋ホイールはポインターを中心に拡大縮小します。", "splitDraftHint": "リリースを保存するまでは下書きのままです。", "splitDiscardAsk": "今回の分割を破棄しますか？保存済み音声と元ファイルは保持されます。", "splitCancelAsk": "書き出しを中止して今回の分割を破棄しますか？", "splitDiscard": "今回の分割を破棄", "splitResetAsk": "自動分割に戻しますか？手動編集と破棄区間が置き換わります。", "splitWriting": "保持区間を書き出しています…", "splitInvalid": "長さを読み取れません。非圧縮PCM／浮動小数点WAV、または長さが記録されたFLACを選んでください。", "splitError": "書き出しに失敗しました。新しいファイルは削除され、元ファイルは保持されています。再試行してください。", "splitBusy": "別の音声処理を完了または中止してください。", "splitChanged": "元ファイルが変更されました。閉じて再度選んでください。", "splitPreviewFail": "このファイルは試聴できません。編集と分割は可能です。", "splitTooClose": "分割点の間を0.1秒以上空けてください。", "splitBadTime": "隣の分割点の範囲内でmm:ss.mmmを入力してください。元の値を保持しました。", "splitExcess": "余分なファイルは未割り当てです。音声一覧で割り当ててください。", "splitRuler": "時間軸：矢印で移動、Enterで分割、Spaceで再生／停止", "audioLocationHint": "既定ではアプリデータ内のPMCO Audioに保存します。手動で選んだフォルダーはそのまま使用します。旧保存先にファイルがある場合はコピーして統合するか選べます。元のファイルは保持され、この設定は同期されません。", "audioLocationMergeAsk": "旧保存先の音声を選択したフォルダーにコピーして統合しますか？「保存先のみ変更」では旧ファイルをコピーせず、音声が見つからない表示になる場合があります。元ファイルは常に保持します。", "audioLocationMerge": "コピーして統合", "audioLocationSwitch": "保存先のみ変更", "audioLocationConflict": "移動先に同じパスで内容の異なるファイルがあります。上書きせず、保存先も変更しませんでした。", "splitTools": "音声編集ツール"});
   Object.assign(I18N.zh, {"splitAdd": "＋添加音频文件并裁剪…", "splitTitle": "裁剪音频", "splitKeep": "保留", "splitGap": "留空", "splitPoint": "分割点", "splitDrop": "设为留空", "splitRestore": "取消留空", "splitAddPoint": "添加分割点", "splitDeletePoint": "删除分割点", "splitPlayPoint": "从分割点播放", "splitUndo": "撤销", "splitRedo": "重做", "splitReset": "恢复自动分割", "splitZoomIn": "放大", "splitZoomOut": "缩小", "splitWrite": "加入音频草稿", "splitSummary": "将写出 {files} 个文件，丢弃 {gaps} 段共 {time}。", "splitMissing": "第 {n} 个音轨缺少时长，未参与分割。", "splitRemaining": "剩余音频不足第 {n} 个音轨及后续条目的时长，余下部分留空。", "splitShort": "首个时长需要 {needed}，音频只有 {actual}，将保留整段。", "splitHelp": "点击或拖动刻度／音频条定位，双击添加切点。Ctrl/Cmd 多选，Shift 连选；Alt＋拖动或方向键移动分割。拖动切点或输入时码微调。Ctrl＋滚轮以光标位置为中心缩放。", "splitDraftHint": "文件加入草稿，保存专辑后才正式保留。", "splitDiscardAsk": "放弃本次分割结果？已保存音频和源文件会保留。", "splitCancelAsk": "取消写入并放弃本次分割结果？", "splitDiscard": "放弃本次分割", "splitResetAsk": "恢复自动分割？手动修改和手动留空设置将被替换。", "splitWriting": "正在写出保留区间…", "splitInvalid": "无法读取有效时长。请选择未压缩的 PCM／浮点 WAV，或包含有效时长的 FLAC 文件。", "splitError": "无法写出音频，已清理本次新文件，源文件保留。请重试。", "splitBusy": "请先完成或取消其他音频写入任务。", "splitChanged": "源文件已变更，请关闭后重新选择。", "splitPreviewFail": "此文件无法试听，仍可编辑和裁剪。", "splitTooClose": "分割点之间至少保留 0.1 秒。", "splitBadTime": "请输入相邻分割点内的 mm:ss.mmm，已保留原值。", "splitExcess": "多出的文件设为「无音轨」，可在音频列表中指派。", "splitRuler": "时间轴：方向键定位，回车添加切点，空格播放／暂停", "audioLocationHint": "默认保存在应用数据目录中的 PMCO Audio。手动选择后直接使用所选文件夹；旧位置有文件时可选择是否复制并合并，原文件保留。此设置仅用于本机。", "audioLocationMergeAsk": "是否将旧位置的音频复制并合并到所选文件夹？选择「仅更改位置」会保留旧文件但不复制，相关音频可能显示缺失。原文件始终保留。", "audioLocationMerge": "复制并合并", "audioLocationSwitch": "仅更改位置", "audioLocationConflict": "目标位置存在同路径但内容不同的文件，未覆盖文件，保存位置保持不变。", "splitTools": "音频编辑工具"});
+  Object.assign(I18N.en, {"audioRemoveHead": "Remove audio?", "audioRemoveAsk": "Remove “{name}” from this item? Its local copy, if present, will also be deleted.", "audioRemoveFailed": "Could not save the removal. Your audio is retained. Try again.", "audioRemoveCleanup": "Audio removed from the item. Its local file could not be deleted."});
+  Object.assign(I18N.ja, {"audioRemoveHead": "音声を削除しますか？", "audioRemoveAsk": "このメディアから「{name}」を削除しますか？このコンピューターにあるコピーも削除されます。", "audioRemoveFailed": "削除を保存できませんでした。音声は保持されています。再試行してください。", "audioRemoveCleanup": "メディアから音声を外しましたが、ローカルファイルを削除できませんでした。"});
+  Object.assign(I18N.zh, {"audioRemoveHead": "删除音频？", "audioRemoveAsk": "从本件移除「{name}」？本机上的音频副本（如有）也会删除。", "audioRemoveFailed": "无法保存删除操作，音频仍保留。请重试。", "audioRemoveCleanup": "已从本件移除音频，但无法删除本机文件。"});
   /* Missing medium is a legacy CD. Medium never replaces musical form (type). */
   Object.assign(I18N.en, {condition: "Media condition", navMore: "More"});
   Object.assign(I18N.ja, {condition: "メディアの状態", navMore: "その他"});
@@ -3098,7 +3110,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     other:"M3 3h18v5H3z M5 8v13h14V8 M9 12h6",
     plus:"M12 4v16 M4 12h16", edit:"M4 16l12-12 4 4L8 20H4z M13 7l4 4",
     drop:"M5 7h14 M9 3h6 M7 7l1 14h8l1-14 M10 10v7 M14 10v7",
-    keep:"M3 12l6 6L21 6", cut:"M9 6a3 3 0 1 0-6 0 3 3 0 0 0 6 0 M9 18a3 3 0 1 0-6 0 3 3 0 0 0 6 0 M8 8l13 13 M8 16L21 3",
+    keep:"M3 5h18v14H3z M8 12h8 M12 8v8", cut:"M9 6a3 3 0 1 0-6 0 3 3 0 0 0 6 0 M9 18a3 3 0 1 0-6 0 3 3 0 0 0 6 0 M8 8l13 13 M8 16L21 3",
     undo:"M8 4L3 9l5 5 M3 9h11a7 7 0 0 1 0 14",
     redo:"M16 4l5 5-5 5 M21 9H10a7 7 0 0 0 0 14",
     reset:"M3 4v6h6 M3 10a9 9 0 1 1 2 9",
@@ -3437,6 +3449,8 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     if (ov.hidden || ov.classList.contains("is-closing")) return;
     if (id === "split" && !force) { requestSplitClose(); return; }
     if (id === "cd" && splitEditor) { requestSplitClose(); return; }
+    if (id === "audio-remove" && audioRemoval && audioRemoval.busy) return;
+    if (id === "audio-remove") audioRemoval=null;
     if (id === "recovery" && !force) return;
     if (id === "settings" && audioLocationBusy) return;
     if (id === "settings") closeSettingsHelp();
@@ -4846,7 +4860,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     dropEntries(function (e) { return gone[e.cdId]; });
     prunePlaylists(function (x) { return gone[x.cdId]; });
     var audioTimer = AudioLib.ready ? setTimeout(function () {
-      list.forEach(function (cd) { AudioLib.call("remove_cd_audio", { cdId: cd.id }).catch(function () {}); });
+      cleanDraftAudio(list.reduce(function(files,cd){return files.concat((cd.audio||[]).map(function(a){return a.file;}));},[]),true);
     }, backend.restore ? UNDO_MS + 1000 : 0) : null;
     var msg = message || (list.length === 1 ? t("toastRemoved", { title: list[0].title }) : t("toastRemovedN", { n: list.length }));
     toast(msg, backend.restore ? {
@@ -5177,6 +5191,15 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         return persist();
       },
       retry: function () { return persist(); },
+      removeAudio: async function(id,file) {
+        var cd=items.find(function(c){return c.id===id;});
+        if(!cd || !(cd.audio||[]).some(function(a){return a.file===file;}))return false;
+        var stamp=Date.now();
+        items=items.map(function(c){return c.id===id?Object.assign({},c,{audio:(c.audio||[]).filter(function(a){return a.file!==file;}),updatedAt:stamp}):c;});
+        var nextMeta=clone(meta);
+        nextMeta.playlists.forEach(function(pl){pl.items=pl.items.filter(function(entry){return entry.cdId!==id||entry.file!==file;});});
+        meta=nextMeta;syncInfo.metaAt=stamp;await persist();setCds(items.slice());return true;
+      },
       saveRelease: async function (changes, removed, favorites) {
         var byId = {}, stamp = Date.now();
         changes.forEach(function (cd) { byId[cd.id] = Object.assign({}, cd, { updatedAt: stamp }); });
@@ -5278,7 +5301,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
             if (drop[c.id] && stillSame(c)) {
               changed = true;
               /* Removed on another computer: its audio copies here go too. */
-              removedHere.push(c.id);
+              removedHere.push(clone(c));
               return false;
             }
             return true;
@@ -5297,15 +5320,15 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           await persist(true);
           setCds(items.slice());
           applyMeta(meta);
-          removedHere.forEach(function (id) {
-            dropEntries(function (e) { return e.cdId === id; });
-            if (AudioLib.ready) AudioLib.call("remove_cd_audio", { cdId: id }).catch(function () {});
+          removedHere.forEach(function (cd) {
+            dropEntries(function (e) { return e.cdId === cd.id; });
+            if (AudioLib.ready) cleanDraftAudio((cd.audio||[]).map(function(a){return a.file;}),true);
           });
         }
       }
     };
     // Serialize whole mutations, so a failed write cannot roll back a later successful edit.
-    ["add", "update", "remove", "changeDiscs", "restore", "saveMeta", "saveRelease", "importDoc", "applySync", "retry"].forEach(function (key) {
+    ["add", "update", "remove", "changeDiscs", "restore", "saveMeta", "saveRelease", "removeAudio", "importDoc", "applySync", "retry"].forEach(function (key) {
       var action = api[key];
       api[key] = function () {
         var args = arguments;
@@ -5317,7 +5340,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
             var pendingMetaAt = syncInfo.metaAt;
             items = oldItems; syncInfo = oldSync;
             if (key === "saveMeta" || key === "retry") syncInfo.metaAt = pendingMetaAt;
-            if (key === "saveRelease" || key === "importDoc" || key === "applySync") meta = oldMeta;
+            if (key === "saveRelease" || key === "removeAudio" || key === "importDoc" || key === "applySync") meta = oldMeta;
             if (key === "saveMeta" || key === "retry") $("storage-notice").hidden = false;
             setCds(items.slice());
             if (String(error).indexOf("collection_unreadable") >= 0) { ready = false; loaded = false; showRecovery(); }
@@ -9432,7 +9455,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   /* ---------- audio ----------
      A CD can hold its audio. Files the person adds are copied into PMCO's library on this computer
      (lib.rs: add_audio) and listed in cd.audio as { file, name, size, track }: `file` is the path
-     inside the library, `track` the disc's track number (1, 2, ...), or 0 for none. Only the list
+     inside the selected folder, `track` the disc's track number (1, 2, ...), or 0 for none. Only the list
      syncs between computers, not the files; a file missing here shows as on another computer.
      Desktop app only. */
   var AudioLib = {
@@ -9504,12 +9527,15 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       list: clone(cd && cd.audio || []), original: clone(cd && cd.audio || []),
       copied: [], busy: false, saving: false };
   }
-  async function cleanDraftAudio(files) {
-    if (!files.length) return;
+  async function cleanDraftAudio(files,quiet) {
+    var referenced=new Set(cds.reduce(function(list,cd){return list.concat((cd.audio||[]).map(function(a){return a.file;}));},[]));
+    files=Array.from(new Set(files)).filter(function(file){return !referenced.has(file);});
+    if (!files.length) return true;
     try {
       await AudioLib.call("remove_audio", { files: files });
       files.forEach(function (f) { delete AudioLib.present[f]; });
-    } catch (e) { toast(t("toastAudioFail")); }
+      return true;
+    } catch (e) { if(!quiet)toast(t("toastAudioFail"));return false; }
   }
   function discardFormAudio() {
     var files = formAudio ? formAudio.copied.slice() : [];
@@ -9529,16 +9555,16 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     renderFormAudio();
     var imported = [];
     try {
-      var added = await AudioLib.call("add_audio", { cdId: draft.id });
+      var added = await AudioLib.call("add_audio", { cdId: draft.id, naming:formAudioNaming() });
       imported = (added || []).map(function (a) { return a.file; });
       if (formAudio !== draft) { await cleanDraftAudio((added || []).map(function (a) { return a.file; })); return; }
       draft.copied.push.apply(draft.copied, imported);
       var taken = {};
       draft.list.forEach(function (a) { if (a.track) taken[a.track] = true; });
       var free = discTracks({ medium:$("medium").value, sides:formSides, works: formAudioWorks() }).map(function (x) { return x.no; }).filter(function (n) { return !taken[n]; });
-      (added || []).sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { numeric: true }); }).forEach(function (a) {
-        draft.list.push({ file: a.file, name: a.name, size: a.size, track: free.shift() || 0 });
-      });
+      var ordered=added||[];
+      if(ordered.every(function(a){return a.track==null;})) ordered.sort(function(a,b){return a.name.localeCompare(b.name,undefined,{numeric:true});});
+      ordered.forEach(function(a){draft.list.push({file:a.file,name:a.name,size:a.size,track:a.track==null?free.shift()||0:a.track});});
     } catch (e) {
       await cleanDraftAudio(imported);
       draft.copied = draft.copied.filter(function (f) { return imported.indexOf(f) === -1; });
@@ -9546,6 +9572,20 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       toast(t("toastAudioFail"));
     }
     finally { draft.busy = false; if (formAudio === draft) renderFormAudio(); }
+  }
+  /* Snapshot metadata for readable file names. Existing saved files never rename on edits. */
+  function formAudioNaming(physicalCount) {
+    var medium=$("medium").value, tracks=discTracks({medium:medium,sides:formSides,works:formAudioWorks()}), used={};
+    (formAudio?formAudio.list:[]).forEach(function(a){if(a.track)used[a.track]=true;});
+    var slots=physicalCount?Array.from({length:physicalCount},function(_,i){return {no:i+1,title:tracks[i]&&tracks[i].title||""};}):tracks.filter(function(tr){return !used[tr.no];});
+    var item="";
+    if(formSetId && !formMusicOnly) {
+      var peers=discSession?discSession.entries.filter(function(e){return e.include && e.number<=formDiscNumber && (e.id===(formAudio&&formAudio.id)?medium:detailCopyMedium(e))===medium;}):[];
+      var labels={cd:"CD",vinyl:"Vinyl",cassette:"Cassette",sacd:"SACD",dvd:"DVD",bluray:"Blu-ray",other:$("mediumName").value.trim()||"Other"};
+      item=(labels[medium]||"Other")+Math.max(1,peers.length);
+    }
+    var next=Math.max.apply(Math,[physicalCount||tracks.length].concat(Object.keys(used).map(Number)))+1;
+    return {title:$("title").value.trim(),item:item,tracks:slots.map(function(tr){return {number:tr.no,title:tr.title||""};}),next:next};
   }
   function formAudioWorks() { var works = readWorks(); return Array.isArray(works) ? works : []; }
   function renderFormAudio() {
@@ -9811,12 +9851,12 @@ async function writeAudioSplit(){
       do{await new Promise(function(resolve){setTimeout(resolve,200);});if(splitEditor!==ed)return;status=await AudioLib.call("audio_split_status",{id:ed.info.id});$("split-progress").value=status.progress;}while(status.state==="writing");
       if(status.state==="cancelled"||ed.cancelling)return;
       if(status.state!=="done")throw status.code||"split_io";
-      var added=await AudioLib.call("adopt_audio_split",{id:ed.info.id});
+      var added=await AudioLib.call("adopt_audio_split",{id:ed.info.id,naming:formAudioNaming()});
       if(formAudio!==ed.draft||splitEditor!==ed||ed.cancelling){await cleanDraftAudio(added.map(function(a){return a.file;}));if(splitEditor===ed&&!ed.cancelling)finishSplit();return;}
       var used={};ed.draft.list.forEach(function(a){if(a.track)used[a.track]=true;});
       var free=discTracks({medium:$("medium").value,sides:formSides,works:formAudioWorks()}).map(function(tr){return tr.no;}).filter(function(n){return !used[n];});
       var excess=false;
-      added.forEach(function(a){a.track=free.shift()||0;if(!a.track)excess=true;ed.draft.copied.push(a.file);ed.draft.list.push(a);});
+      added.forEach(function(a){a.track=a.track==null?free.shift()||0:a.track;if(!a.track)excess=true;ed.draft.copied.push(a.file);ed.draft.list.push(a);});
       finishSplit();if(excess)toast(t("splitExcess"));
     }catch(e){if(splitEditor!==ed)return;ed.writing=false;$("split-status").textContent=t(String(e)==="split_busy"?"splitBusy":String(e)==="split_changed"?"splitChanged":"splitError");renderSplit();}
   },"splitWrite");
@@ -9852,7 +9892,6 @@ function splitZoom(amount,clientX){
   ed.zoom=Math.max(1,Math.min(32,ed.zoom*amount));renderSplit();
   scroller.scrollLeft=anchor*$("split-timeline").getBoundingClientRect().width-x;
 }
-$("split-zoom-in").addEventListener("click",function(){splitZoom(2);});$("split-zoom-out").addEventListener("click",function(){splitZoom(0.5);});
 $("split-scroll").addEventListener("wheel",function(e){if(e.ctrlKey||e.metaKey){e.preventDefault();splitZoom(e.deltaY<0?2:0.5,e.clientX);}},{passive:false});
 $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed||ed.writing||e.isComposing||e.target.matches("input,textarea"))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();splitUndo(e.shiftKey);}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="a"){e.preventDefault();ed.selected=new Set(ed.parts.map(function(p){return p.id;}));ed.point=null;splitRefreshSelection();}});
 
@@ -9879,14 +9918,25 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
     if (e.target.closest("button") && !e.target.closest(".w-performers")) renderFormAudio();
   });
   $("add-work").addEventListener("click", renderFormAudio);
-  async function removeAudio(cd, file) {
-    dropEntries(function (e) { return e.cdId === cd.id && e.file === file; });
-    prunePlaylists(function (x) { return x.cdId === cd.id && x.file === file; });
-    try { await AudioLib.call("remove_audio", { files: [file] }); } catch (e) { /* the list still drops it */ }
-    delete AudioLib.present[file];
-    var list = (cd.audio || []).filter(function (a) { return a.file !== file; });
-    try { await saveCdChange(cd, { audio: list }); } catch (e) { toast(t("toastSaveFail")); }
+  var audioRemoval=null;
+  function askRemoveAudio(cd,audio) {
+    audioRemoval={cdId:cd.id,file:audio.file,busy:false};
+    $("audio-remove-text").textContent=t("audioRemoveAsk",{name:audio.name||audio.file});$("audio-remove-error").textContent="";
+    $("audio-remove-cancel").disabled=$("audio-remove-confirm").disabled=false;openWin("audio-remove");
   }
+  $("audio-remove-cancel").addEventListener("click",function(){closeWin("audio-remove");});
+  $("audio-remove-confirm").addEventListener("click",async function(){
+    var pending=audioRemoval;if(!pending||pending.busy)return;
+    var cd=cdById(pending.cdId);if(!cd||!(cd.audio||[]).some(function(a){return a.file===pending.file;})){closeWin("audio-remove");return;}
+    pending.busy=true;$("audio-remove-cancel").disabled=$("audio-remove-confirm").disabled=true;$("audio-remove-error").textContent="";
+    try {
+      if(backend.removeAudio)await backend.removeAudio(cd.id,pending.file);
+      else {await saveCdChange(cd,{audio:(cd.audio||[]).filter(function(a){return a.file!==pending.file;})});prunePlaylists(function(x){return x.cdId===cd.id&&x.file===pending.file;});}
+      dropEntries(function(e){return e.cdId===cd.id&&e.file===pending.file;});
+      var cleaned=await cleanDraftAudio([pending.file],true);pending.busy=false;closeWin("audio-remove");if(!$("win-detail").hidden&&!$("win-detail").contains(document.activeElement))$("close-detail").focus({preventScroll:true});if(!cleaned)toast(t("audioRemoveCleanup"));
+    } catch(e) {pending.busy=false;$("audio-remove-error").textContent=t("audioRemoveFailed");}
+    finally {$("audio-remove-cancel").disabled=$("audio-remove-confirm").disabled=false;}
+  });
   /* Track lengths from the audio files: a track with no length takes its file's length. Each CD is
      looked at once per session (when its profile opens), and again after files are added or moved
      to other tracks. Lengths typed by the person are never changed. */
@@ -10065,7 +10115,7 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
         rm.type = "button";
         rm.id = "audio-remove-" + i;
         rm.setAttribute("aria-label", t("audioRemove", { name: a.name }));
-        rm.addEventListener("click", function () { removeAudio(cd, a.file); });
+        rm.addEventListener("click", function () { askRemoveAudio(cd, a); });
         li.appendChild(rm);
       }
       ul.appendChild(li);
@@ -11687,7 +11737,7 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
           await new Promise(function (resolve) { setTimeout(resolve,250); });
         }
         if (cancelRequested) throw "drive_cancelled";
-        adopted = await AudioLib.call("adopt_cd_import", { jobId:job, cdId:draft.id });
+        adopted = await AudioLib.call("adopt_cd_import", { jobId:job, cdId:draft.id, naming:formAudioNaming(currentDisc.tracks.length) });
         if (cancelRequested || formAudio !== draft) { await cleanDraftAudio(adopted.map(function (a) { return a.file; })); adopted = []; throw "drive_cancelled"; }
         // Only physical durations/empty track slots come from the drive. Preserve all entered metadata.
         if (!slots.length) {

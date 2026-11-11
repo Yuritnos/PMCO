@@ -187,25 +187,17 @@ pub async fn cancel_audio_split(state:State<'_,SplitState>,id:String)->Result<()
     }).await.map_err(|_|IO)?
 }
 #[tauri::command]
-pub async fn adopt_audio_split(app:AppHandle,state:State<'_,SplitState>,id:String)->Result<Vec<super::AudioFile>> {
+pub async fn adopt_audio_split(app:AppHandle,state:State<'_,SplitState>,id:String,naming:super::audio_files::AudioNaming)->Result<Vec<super::AudioFile>> {
     let job=find(&state,&id)?;
     tauri::async_runtime::spawn_blocking(move|| {
         let _guard=super::AUDIO_IO.try_lock().map_err(|_|"split_busy")?;
         let mut s=job.status.lock().unwrap(); if s.state!="done" || job.cancel.load(Ordering::SeqCst) {return Err(INVALID.into());}
         let mut files=fs::read_dir(&job.folder).map_err(|_|IO)?.map(|e|e.map(|e|e.path()).map_err(|_|IO.to_string())).collect::<Result<Vec<_>>>()?;
         files.retain(|p|p.extension().map(|e|e=="wav"||e=="flac").unwrap_or(false));files.sort();
-        let stem=Path::new(&job.info.name).file_stem().unwrap_or_default().to_string_lossy();
-        let paths=files.iter().map(|p|format!("{}/{}-{}",job.cd_id,job.info.id,p.file_name().unwrap_or_default().to_string_lossy())).collect::<Vec<_>>();
-        super::storage::atomic_write(&job.folder.join("adopted.json"),&serde_json::json!(paths))?;
-        let dir=super::audio_item_dir(&app,&job.cd_id)?;fs::create_dir_all(&dir).map_err(|_|IO)?;
-        let mut copied=Vec::new();let mut added=Vec::new();
-        for (i,path) in files.iter().enumerate() {
-            let dest=super::library_path(&app,&paths[i])?;
-            if let Err(error)=super::audio_location::copy_file(path,&dest) { for p in copied {let _=fs::remove_file(p);} return Err(error); }
-            copied.push(dest.clone());added.push(super::AudioFile{file:paths[i].clone(),name:format!("{} - {:04}.{}",stem,i+1,path.extension().unwrap_or_default().to_string_lossy()),size:fs::metadata(&dest).map_err(|_|IO)?.len()});
-        }
-        // Retain the small ownership manifest until next startup checks saved data and backups.
-        for path in files {let _=fs::remove_file(path);}
+        super::check_cd_id(&job.cd_id)?;
+        let root=super::audio_root(&app)?;
+        let added=super::audio_files::copy_batch(&files,&root,&naming,&job.folder,&job.info.id)?;
+        for path in files{let _=fs::remove_file(path);}
         s.state="adopted".into();Ok(added)
     }).await.map_err(|_|IO)?
 }

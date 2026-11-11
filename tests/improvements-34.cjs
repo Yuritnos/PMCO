@@ -6,7 +6,7 @@ let playwright;
 try { playwright = require('playwright'); }
 catch { playwright = require(path.join(process.env.USERPROFILE, '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')); }
 const html = fs.readFileSync(path.join(__dirname, '../src/index.html'), 'utf8').replace('  /* ---------- start ---------- */',
-  '  window.mediaQA = { startEdit, exportCsv:async function(){var result,old=downloadsApi;downloadsApi={save:async function(req){result=req.data;}};try{await doExport("csv");return result;}finally{downloadsApi=old;}}, Cloud, fillFromLookup, splitAuto, splitMove, splitTime, splitParse, splitEdit, splitAddPoint, splitDeletePoint, splitUndo, splitSeek, openAudioSplit, getSplit: function(){return splitEditor;}, getDraft: function(){return formAudio;}, setSplit: function(ed){splitEditor=ed;}, setLang, openDetail, discTracks, dgMedia, dgDiscLists, discogsSource, lookupDiscData, populateLookupDrafts, playId: function(id) { playAudio(cdById(id)); }, renderPlaylist, moveCard, resetWorks, readWorks, cdFormDirty, closeWin, queue: function() { return clone(player.queue); }, currentEntry }; Cloud.start=function(){};\n  /* ---------- start ---------- */');
+  '  window.mediaQA = { startEdit, exportCsv:async function(){var result,old=downloadsApi;downloadsApi={save:async function(req){result=req.data;}};try{await doExport("csv");return result;}finally{downloadsApi=old;}}, Cloud, fillFromLookup, splitAuto, splitMove, splitTime, splitParse, splitEdit, splitAddPoint, splitDeletePoint, splitUndo, splitSeek, splitZoom, formAudioNaming, getBackend:function(){return backend;}, openAudioSplit, getSplit: function(){return splitEditor;}, getDraft: function(){return formAudio;}, setSplit: function(ed){splitEditor=ed;}, setLang, openDetail, discTracks, dgMedia, dgDiscLists, discogsSource, lookupDiscData, populateLookupDrafts, playId: function(id) { playAudio(cdById(id)); }, renderPlaylist, moveCard, resetWorks, readWorks, cdFormDirty, closeWin, queue: function() { return clone(player.queue); }, currentEntry }; Cloud.start=function(){};\n  /* ---------- start ---------- */');
 const set = {id:'mixed', title:'Mixed anthology', total:3};
 const seed = [
   {id:'old', title:'Legacy CD', extra:{keep:true}, works:[{title:'Old work', tracks:[]}]},
@@ -194,7 +194,7 @@ async function main(){
    await page.locator('#split-point-time').fill('99:99.000');await page.locator('#split-point-time').press('Tab');assert.equal(await page.locator('#split-point-time').inputValue(),'1:05.123');
    await page.locator('.split-point').first().focus();await page.keyboard.press('Delete');assert(await page.locator('#split-ruler').evaluate(n=>n===document.activeElement));assert.equal(await page.locator('.split-part').count(),3);await page.locator('#split-undo').click();assert.equal(await page.locator('.split-part').count(),4);
    await page.locator('#split-reset').click();assert(await page.locator('#win-split-confirm').isVisible());await page.locator('#split-ask-yes').click();assert.equal(await page.locator('.split-part').count(),3);
-   await page.locator('#split-zoom-in').click();assert.equal(await page.locator('#split-zoom-value').textContent(),'2×');assert(await page.locator('#split-scroll').evaluate(n=>n.scrollWidth>n.clientWidth));
+   await page.evaluate(()=>mediaQA.splitZoom(2));assert.equal(await page.locator('#split-zoom-value').textContent(),'2×');assert(await page.locator('#split-scroll').evaluate(n=>n.scrollWidth>n.clientWidth));
   }finally{await f.close();}
  });
  await test('C4: multi-move preserves lengths, intervals, states and clamps both edges; keyboard nudges undo',async()=>{
@@ -246,12 +246,12 @@ async function main(){
    await page.evaluate(()=>mediaQA.closeWin('cd',true));await page.locator('#open-settings').click();state.locationResult='C:\\Chosen';await page.locator('#audio-location-choose').click();await until(()=>state.commands.some(c=>c.command==='choose_audio_location'));assert((await page.locator('#audio-location-path').textContent()).includes('Chosen'));const command=state.commands.find(c=>c.command==='choose_audio_location');assert(command.args.prompt.includes('merge'));assert(command.args.no.includes('Switch'));
   }finally{await f.close();}
  });
- await test('refinement: eight localized icon tools stay on one row and audio strip is slimmer',async()=>{
+ await test('refinement: six localized icon tools stay on one row and audio strip is slimmer',async()=>{
   const f=await fixture({native:true}),{page}=f;
   try{
    for(const lang of ['en','ja','zh'])for(const width of [1280,480,360]){
     await page.setViewportSize({width,height:900});await page.evaluate(l=>mediaQA.setLang(l,false),lang);await editor(page);
-    assert.equal(await page.locator('#split-select-all,#split-preview').count(),0);assert.equal(await page.locator('.split-toolbar button').count(),8);assert.equal(await page.locator('.split-toolbar').textContent(),'');
+    assert.equal(await page.locator('#split-select-all,#split-preview,#split-zoom-in,#split-zoom-out').count(),0);assert.deepEqual(await page.locator('.split-toolbar button').evaluateAll(ns=>ns.map(n=>n.id)),['split-add-point','split-drop','split-keep','split-reset','split-undo','split-redo']);assert.equal(await page.locator('.split-toolbar button').count(),6);assert.equal(await page.locator('.split-toolbar').textContent(),'');
     const geometry=await page.locator('.split-toolbar').evaluate(n=>{const buttons=[...n.children],rects=buttons.map(b=>b.getBoundingClientRect());return {oneRow:rects.every(r=>Math.abs(r.y-rects[0].y)<1),labelled:buttons.every(b=>b.title&&b.getAttribute('aria-label')&&b.querySelector('svg')),fit:n.scrollWidth<=n.clientWidth};});assert.deepEqual(geometry,{oneRow:true,labelled:true,fit:true});
     const height=(await page.locator('.split-part').first().boundingBox()).height;assert(height>=60&&height<80);
     await page.locator('#split-close').click();await page.locator('#split-ask-yes').click();await page.locator('#win-split').waitFor({state:'hidden'});await page.evaluate(()=>mediaQA.closeWin('cd',true));
@@ -275,7 +275,7 @@ async function main(){
    await editor(page);
    await page.locator('.split-point').first().click();assert(await page.locator('#split-point-row').isVisible());assert.equal(await page.locator('#split-point-time').inputValue(),'3:00.000');
    for(const zoom of [1,2,4,8,16,32]){
-    if(zoom>1)await page.locator('#split-zoom-in').click();
+    if(zoom>1)await page.evaluate(()=>mediaQA.splitZoom(2));
     await page.locator('#split-scroll').evaluate(n=>n.scrollLeft=n.scrollWidth*.27);
     const checks=await page.evaluate(()=>{const ed=mediaQA.getSplit(),timeline=document.getElementById('split-timeline').getBoundingClientRect();return [...document.querySelectorAll('.split-point')].map(n=>{const rect=n.getBoundingClientRect(),i=Number(n.dataset.point);return {error:Math.abs(rect.left+rect.width/2-(timeline.left+timeline.width*ed.parts[i].end/ed.info.frames)),triangle:getComputedStyle(n,'::before').clipPath,lineWidth:getComputedStyle(n,'::after').width};});});assert(checks.every(c=>c.error<.75&&c.triangle.includes('polygon')&&c.triangle.includes('50% 100%')&&c.lineWidth==='2px'));
    }

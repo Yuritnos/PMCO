@@ -25,8 +25,7 @@ pub struct Progress { id: String, state: String, track: u32, tracks: u32, progre
 struct Job { id: String, folder: PathBuf, cancel: AtomicBool, thread: AtomicU32, status: Mutex<Progress> }
 #[derive(Default)]
 pub struct DriveState { job: Mutex<Option<Arc<Job>>> }
-#[derive(Serialize)]
-pub struct ImportedTrack { file: String, name: String, size: u64, track: u32 }
+type ImportedTrack = super::audio_files::AudioFile;
 
 fn make_disc(drive: String, starts: &[u32], leadout: u32) -> Result<Disc> {
     if starts.is_empty() || starts.len() > 99 || leadout > 100 * 60 * 75 || starts[0] > leadout ||
@@ -190,7 +189,7 @@ mod platform {
 }
 
 fn root(app:&AppHandle)->Result<PathBuf>{let dir=super::data_dir(app)?.join("cd-imports");fs::create_dir_all(&dir).map_err(|_|fail("drive_write"))?;Ok(dir)}
-fn cleanup_folder(path:&Path){if path.file_name().and_then(|p|p.to_str()).map(|p|p.starts_with("rip-")||p.starts_with("split-")).unwrap_or(false)&&!path.is_symlink(){let _=fs::remove_dir_all(path);}}
+fn cleanup_folder(path:&Path){if path.file_name().and_then(|p|p.to_str()).map(|p|p.starts_with("rip-")||p.starts_with("split-")||p.starts_with("import-")).unwrap_or(false)&&!path.is_symlink(){let _=fs::remove_dir_all(path);}}
 fn owned_file(job:&str,file:&str)->bool {
     let parts=file.split('/').collect::<Vec<_>>();
     parts.len()==2 && super::check_cd_id(parts[0]).is_ok() && parts[1].starts_with(&format!("{job}-{}-",if job.starts_with("split-"){ "part" }else{ "track" })) &&
@@ -214,6 +213,10 @@ pub(crate) fn reap_folder(folder:&Path,audio:&Path,references:&str,can_clean:boo
     let manifest=folder.join("adopted.json");
     if manifest.exists(){
         if !can_clean{return false;}
+        if fs::read(&manifest).ok().and_then(|b|serde_json::from_slice::<Value>(&b).ok()).map(|v|v.is_object()).unwrap_or(false) {
+            if !super::audio_files::reap_manifest(folder,audio,references,can_clean){return false;}
+            cleanup_folder(folder);return true;
+        }
         let Some(files)=fs::read(&manifest).ok().and_then(|b|serde_json::from_slice::<Vec<String>>(&b).ok()) else{return false;};
         let Ok(root)=audio.canonicalize() else{return false;};
         for file in files {
@@ -336,24 +339,15 @@ mod tests {
     }
 }
 #[tauri::command]
-pub async fn adopt_cd_import(app:AppHandle,state:State<'_,DriveState>,job_id:String,cd_id:String)->Result<Vec<ImportedTrack>>{
+pub async fn adopt_cd_import(app:AppHandle,state:State<'_,DriveState>,job_id:String,cd_id:String,mut naming:super::audio_files::AudioNaming)->Result<Vec<ImportedTrack>>{
     let _audio_guard=super::AUDIO_IO.lock().map_err(|_|fail("drive_busy"))?;
     super::check_cd_id(&cd_id)?;let job=find_job(&state,&job_id)?;let mut status=job.status.lock().unwrap();
     if status.state!="done"||job.cancel.load(Ordering::SeqCst){return Err(fail("drive_job"));}
-    let dir=super::audio_item_dir(&app,&cd_id)?;fs::create_dir_all(&dir).map_err(|_|fail("drive_write"))?;
-    let mut entries=fs::read_dir(&job.folder).map_err(|_|fail("drive_write"))?.flatten().filter(|e|e.path().extension().map(|v|v=="wav"||v=="flac").unwrap_or(false)).collect::<Vec<_>>();
-    entries.sort_by_key(|e|e.file_name());
-    if entries.len()!=status.tracks as usize {return Err(fail("drive_write"));}
-    let files:Vec<String>=entries.iter().map(|e|format!("{cd_id}/{}-{}",job.id,e.file_name().to_string_lossy())).collect();
-    // Persist ownership BEFORE moving files, so a crash cannot strand an unseen draft.
-    fs::write(job.folder.join("adopted.json"),serde_json::to_vec(&files).unwrap()).map_err(|_|fail("drive_write"))?;
-    let mut moved=Vec::new();let mut out=Vec::new();
-    for (i,entry) in entries.iter().enumerate(){
-        let dest=super::library_path(&app,&files[i])?;
-        if super::audio_location::copy_file(&entry.path(),&dest).is_err(){for path in moved{let _=fs::remove_file(path);}status.state="error".into();cleanup_folder(&job.folder);return Err(fail("drive_write"));}
-        // The verified, synced library copy is durable even when the library is on another drive.
-        let _=fs::remove_file(entry.path());
-        moved.push(dest.clone());out.push(ImportedTrack{file:files[i].clone(),name:format!("Track {:02}.{}",i+1,dest.extension().unwrap().to_string_lossy()),size:fs::metadata(&dest).map(|m|m.len()).unwrap_or(0),track:(i+1) as u32});
-    }
+    let mut entries=fs::read_dir(&job.folder).map_err(|_|fail("drive_write"))?.flatten().filter(|e|e.path().extension().map(|v|v=="wav"||v=="flac").unwrap_or(false)).map(|e|e.path()).collect::<Vec<_>>();entries.sort();
+    if entries.len()!=status.tracks as usize{return Err(fail("drive_write"));}
+    naming.tracks=(0..entries.len()).map(|i|super::audio_files::TrackName{number:i as u32+1,title:naming.tracks.get(i).map(|n|n.title.clone()).unwrap_or_default()}).collect();
+    let root=super::audio_root(&app)?;
+    let out=super::audio_files::copy_batch(&entries,&root,&naming,&job.folder,&job.id)?;
+    for path in entries{let _=fs::remove_file(path);}
     status.state="drafted".into();Ok(out)
 }

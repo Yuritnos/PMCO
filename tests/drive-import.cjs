@@ -93,6 +93,7 @@ async function main(){
       await scan(f.page);await copy(f.page);
       for(const [id,value] of Object.entries({title:'Piano Concertos',composer:'My composer',type:'Piano concerto',label:'My label',notes:'My notes'})) assert.equal(await f.page.locator('#'+id).inputValue(),value);
       assert.deepEqual(await f.page.evaluate(()=>window.driveQA.readWorks()),[{...works[0],tracks:[{title:'Allegro',duration:'2:00'},{title:'Andante',duration:'2:00'}]}]);
+      assert.deepEqual(f.state.calls.find(c=>c.command==='adopt_cd_import').args.naming,{title:'Piano Concertos',item:'',tracks:[{number:1,title:'Allegro'},{number:2,title:'Andante'}],next:3});
       assert(!f.state.calls.some(c=>c.command.startsWith('lookup_cd_')));
     }finally{await f.close();}
   });

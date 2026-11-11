@@ -15,6 +15,8 @@ mod cd_drive;
 mod storage;
 mod audio_location;
 mod audio_split;
+mod audio_files;
+use audio_files::{AudioFile,AudioNaming};
 static COLLECTION_IO: std::sync::Mutex<()> = std::sync::Mutex::new(());
 static AUDIO_IO: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -433,16 +435,6 @@ async fn fetch_cover(url: String) -> Result<tauri::ipc::Response, String> {
     Ok(tauri::ipc::Response::new(bytes.to_vec()))
 }
 
-/// An audio file in the library, as the page stores it with its CD.
-#[derive(serde::Serialize)]
-struct AudioFile {
-    /// Path inside the audio library, "<CD id>/<file name>".
-    file: String,
-    /// The original file name, for showing.
-    name: String,
-    size: u64,
-}
-
 fn audio_root(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = audio_location::root(&data_dir(app)?)?;
     app.asset_protocol_scope().allow_directory(&dir, true).map_err(|_| "Could not allow the audio folder.")?;
@@ -463,32 +455,6 @@ fn library_path(app: &AppHandle, file: &str) -> Result<PathBuf, String> {
         return Err("That is not a file in the audio library.".into());
     }
     audio_location::join(&audio_root(app)?, file)
-}
-
-fn audio_item_dir(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
-    check_cd_id(id)?;
-    audio_location::join(&audio_root(app)?, id)
-}
-
-/// A file name that is safe on Windows and not yet used in `dir`.
-fn free_name(dir: &Path, original: &str) -> String {
-    let cleaned: String = original
-        .chars()
-        .map(|c| if c.is_control() || "<>:\"/\\|?*".contains(c) { '_' } else { c })
-        .collect();
-    let cleaned = cleaned.trim().trim_end_matches('.').to_string();
-    let base = if cleaned.is_empty() { "audio".to_string() } else { cleaned };
-    let (stem, ext) = match base.rfind('.') {
-        Some(i) if i > 0 => (base[..i].to_string(), base[i..].to_string()),
-        _ => (base.clone(), String::new()),
-    };
-    let mut name = base.clone();
-    let mut n = 2;
-    while dir.join(&name).exists() {
-        name = format!("{stem} ({n}){ext}");
-        n += 1;
-    }
-    name
 }
 
 /// The audio library's folder, so the page can turn library paths into playable addresses.
@@ -519,116 +485,23 @@ async fn choose_audio_location(app: AppHandle, prompt: String, yes: String, no: 
     }).await.map_err(|_| "Could not change the audio folder.")?
 }
 
-const MAX_AUDIO_FILES: usize = 5000;
-
 fn supported_audio(path: &Path) -> bool {
     path.extension().and_then(|e| e.to_str())
         .map(|e| AUDIO_TYPES.iter().any(|kind| e.eq_ignore_ascii_case(kind))).unwrap_or(false)
 }
 
-fn linked_entry(meta: &fs::Metadata) -> bool {
-    if meta.file_type().is_symlink() { return true; }
-    #[cfg(windows)] {
-        use std::os::windows::fs::MetadataExt;
-        if meta.is_dir() && meta.file_attributes() & 0x400 != 0 { return true; }
-    }
-    false
-}
-
-/// A batch owns only newly-created copies. Never overwrite library files, even on failure.
-fn copy_audio_sources(sources: &[(PathBuf, String)], dir: &Path, cd_id: &str) -> Result<Vec<AudioFile>, String> {
-    check_cd_id(cd_id)?;
-    if sources.len() > MAX_AUDIO_FILES { return Err("Choose at most 5,000 audio files at a time.".into()); }
-    fs::create_dir_all(dir).map_err(|e| format!("Could not create {}: {e}", dir.display()))?;
-    let mut added = Vec::new();
-    let mut copied = Vec::new();
-    let result = (|| -> Result<(), String> {
-        for (source, name) in sources {
-            let meta = fs::symlink_metadata(source).map_err(|e| format!("Could not read {name}: {e}"))?;
-            if linked_entry(&meta) || !meta.is_file() || !supported_audio(source) { return Err("Choose supported regular audio files.".into()); }
-            let original = source.file_name().and_then(|n| n.to_str()).unwrap_or("audio");
-            let (target, mut output) = loop {
-                let target = free_name(dir, original);
-                match fs::OpenOptions::new().write(true).create_new(true).open(dir.join(&target)) {
-                    Ok(output) => break (target, output),
-                    Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
-                    Err(e) => return Err(format!("Could not create audio copy: {e}")),
-                }
-            };
-            copied.push(dir.join(&target));
-            let mut input = fs::File::open(source).map_err(|e| format!("Could not read {name}: {e}"))?;
-            let size = std::io::copy(&mut input, &mut output).map_err(|e| format!("Could not copy {name}: {e}"))?;
-            output.sync_all().map_err(|e| format!("Could not finish audio copy: {e}"))?;
-            added.push(AudioFile { file: format!("{cd_id}/{target}"), name: name.clone(), size });
-        }
-        Ok(())
-    })();
-    if let Err(error) = result {
-        for file in copied { let _ = fs::remove_file(file); }
-        return Err(error);
-    }
-    Ok(added)
-}
-
 /// Copy chosen audio files into any physical item's draft.
 #[tauri::command]
-async fn add_audio(app: AppHandle, cd_id: String) -> Result<Vec<AudioFile>, String> {
+async fn add_audio(app: AppHandle, cd_id: String, naming: AudioNaming) -> Result<Vec<AudioFile>, String> {
     check_cd_id(&cd_id)?;
     let Some(picked) = app.dialog().file().add_filter("Audio", &AUDIO_TYPES).blocking_pick_files() else { return Ok(Vec::new()) };
-    let sources = picked.into_iter().map(|chosen| {
-        let source = chosen.into_path().map_err(|e| format!("Could not read that file: {e}"))?;
-        let name = source.file_name().and_then(|n| n.to_str()).unwrap_or("audio").to_string();
-        Ok((source, name))
-    }).collect::<Result<Vec<_>, String>>()?;
+    let mut sources=picked.into_iter().map(|chosen|chosen.into_path().map_err(|_|"Could not read that file.".to_string())).collect::<Result<Vec<_>,String>>()?;
+    sources.sort_by(|a,b|audio_files::natural_cmp(&a.file_name().unwrap_or_default().to_string_lossy(),&b.file_name().unwrap_or_default().to_string_lossy()));
     tauri::async_runtime::spawn_blocking(move || {
-        let _guard = AUDIO_IO.lock().map_err(|_| "Audio storage is busy.")?;
-        let dir = audio_item_dir(&app, &cd_id)?;
-        copy_audio_sources(&sources, &dir, &cd_id)
-    }).await.map_err(|e| e.to_string())?
-}
-
-#[cfg(test)]
-mod audio_import_tests {
-    use super::*;
-    struct Fixture(PathBuf);
-    impl Fixture {
-        fn new() -> Self {
-            let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-            let root = std::env::temp_dir().join(format!("pmco-audio-fixture-{}-{stamp}", std::process::id()));
-            fs::create_dir_all(&root).unwrap(); Self(root)
-        }
-    }
-    impl Drop for Fixture { fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); } }
-    #[test]
-    fn copy_batch_preserves_originals_and_assigns_unique_local_names() {
-        let f = Fixture::new(); let output = f.0.join("library"); fs::create_dir_all(&output).unwrap();
-        let source = f.0.join("track.wav"); fs::write(&source, b"new audio").unwrap();
-        fs::write(output.join("track.wav"), b"saved audio").unwrap();
-        let added = copy_audio_sources(&[(source.clone(), "Side A/track.wav".into()), (source.clone(), "Side B/track.wav".into())], &output, "fixture").unwrap();
-        assert_eq!(added.len(), 2); assert_ne!(added[0].file, added[1].file);
-        assert_eq!(added[0].name, "Side A/track.wav"); assert_eq!(added[0].size, 9);
-        assert_eq!(fs::read(output.join("track.wav")).unwrap(), b"saved audio");
-        assert_eq!(fs::read(source).unwrap(), b"new audio");
-    }
-    #[test]
-    fn failed_batch_removes_only_new_copies() {
-        let f = Fixture::new(); let output = f.0.join("library"); fs::create_dir_all(&output).unwrap();
-        let source = f.0.join("track.wav"); fs::write(&source, b"source").unwrap();
-        fs::write(output.join("saved.flac"), b"keep").unwrap();
-        let sources = vec![(source.clone(), "track.wav".into()), (f.0.join("missing.wav"), "missing.wav".into())];
-        assert!(copy_audio_sources(&sources, &output, "fixture").is_err());
-        assert_eq!(fs::read_dir(&output).unwrap().count(), 1);
-        assert_eq!(fs::read(output.join("saved.flac")).unwrap(), b"keep"); assert!(source.exists());
-    }
-    #[test]
-    fn invalid_sources_and_excessive_nesting_are_rejected() {
-        let f = Fixture::new(); let library = f.0.join("library"); fs::create_dir_all(&library).unwrap();
-        let invalid = f.0.join("picture.png"); fs::write(&invalid, b"picture").unwrap();
-        assert!(copy_audio_sources(&[(invalid.clone(), "picture.png".into())], &library, "fixture").is_err());
-        assert!(copy_audio_sources(&[], &library, "../escape").is_err());
-        assert!(copy_audio_sources(&vec![(invalid, "picture.png".into()); MAX_AUDIO_FILES+1], &library, "fixture").is_err());
-
-    }
+        let _guard=AUDIO_IO.lock().map_err(|_|"Audio storage is busy.")?;
+        let root=audio_root(&app)?;let (folder,job)=audio_files::import_folder(&app)?;
+        audio_files::copy_batch(&sources,&root,&naming,&folder,&job)
+    }).await.map_err(|e|e.to_string())?
 }
 
 /// Which of these library files are on this computer (audio is not synced between computers).
@@ -640,31 +513,8 @@ async fn audio_present(app: AppHandle, files: Vec<String>) -> Result<Vec<bool>, 
 /// Delete library copies. Files already gone are fine.
 #[tauri::command]
 async fn remove_audio(app: AppHandle, files: Vec<String>) -> Result<(), String> {
-    let _guard = AUDIO_IO.lock().map_err(|_| "Audio storage is busy.")?;
-    for f in &files {
-        let path = library_path(&app, f)?;
-        if let Err(e) = fs::remove_file(&path) {
-            if e.kind() != std::io::ErrorKind::NotFound {
-                return Err(format!("Could not remove {f}: {e}"));
-            }
-        }
-        if let Some(parent) = path.parent() {
-            let _ = fs::remove_dir(parent); // only succeeds once the CD's folder is empty
-        }
-    }
-    Ok(())
-}
-
-/// Delete all audio of a removed CD.
-#[tauri::command]
-async fn remove_cd_audio(app: AppHandle, cd_id: String) -> Result<(), String> {
-    let _guard = AUDIO_IO.lock().map_err(|_| "Audio storage is busy.")?;
-    check_cd_id(&cd_id)?;
-    let dir = audio_item_dir(&app, &cd_id)?;
-    if dir.is_dir() {
-        fs::remove_dir_all(&dir).map_err(|e| format!("Could not remove the audio of that CD: {e}"))?;
-    }
-    Ok(())
+    let _guard=AUDIO_IO.lock().map_err(|_|"Audio storage is busy.")?;
+    audio_files::remove_files(&audio_root(&app)?,&files)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -673,7 +523,7 @@ pub fn run() {
         .manage(cd_drive::DriveState::default())
         .manage(audio_split::SplitState::default())
         .register_uri_scheme_protocol("pmco-audio", |context, request| audio_split::preview(context.app_handle(), request))
-        .setup(|app| { let _ = cd_drive::recover(app.handle()); let _ = audio_split::recover(app.handle()); Ok(()) })
+        .setup(|app| { let _ = cd_drive::recover(app.handle()); let _ = audio_split::recover(app.handle()); let _ = audio_files::recover(app.handle()); Ok(()) })
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             load_data,
@@ -690,7 +540,6 @@ pub fn run() {
             audio_split::adopt_audio_split,
             audio_present,
             remove_audio,
-            remove_cd_audio,
             list_backups,
             read_backup,
             covers_root_dir,

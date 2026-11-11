@@ -2,7 +2,15 @@
 
 Updated: 2026-11-11 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: timeline/navigation refinements — PMCO 0.3.1 build 64 delivered (2026-11-11)
+## Current milestone: flat audio storage and confirmed removal — implementation verified (2026-11-11)
+
+- New ordinary imports, CD extraction and trimming save audio directly in the chosen folder without per-item ID directories. Names use current form metadata: **Album - CD1 - 01 - Track title.flac**; standalone items omit the item label, missing track titles use **Track 01**, and duplicate names get **(2)** / **(3)** without overwriting. Names are fixed at import time. No migration or renaming of earlier audio; old references remain supported.
+- Shared native copying verifies bytes, rolls back only new copies, and records ownership privately in app data. Recovery verifies root, filename, size/hash and creation identity before cleaning unreferenced copies. Exact-file draft/release/sync cleanup preserves the chosen folder, unrelated files, shared references and Undo.
+- Profile audio removal now asks for confirmation. Item/playlist changes persist together before playback/file cleanup; failed saves retain audio and permit retry. The trim toolbar has six icons: Add point, Discard, Keep, Reset, Undo, Redo. Keep uses the owner's selected rectangle-plus icon. Zoom buttons are removed; cursor-centered Ctrl+wheel remains.
+- **144 relevant checks passed**: 40 native, 11 flat audio/removal, 19 timeline/navigation, 38 collection integration, 14 persistence/recovery, 7 audio draft and 15 drive import. Three languages, both themes and 360/1280px confirmations/toolbars verified with isolated/mocked data and screenshots. No owner account, library or physical drive used.
+- Pending: commit/push, manually run GitHub Windows build, verify staged NSIS/MSI installers and replace local packages. Current delivered installers remain build 64 until verification succeeds. Version remains 0.3.1; no tags/releases or website publication requested.
+
+## Previous milestone: timeline/navigation refinements — PMCO 0.3.1 build 64 delivered (2026-11-11)
 
 - Replaced narrow navigation with six SVG icon entrances and one horizontally scrolling child row at a time. All media and All music each expose All plus six media icons; Favorites/Playlists retain named tooltip entries and create/edit actions. Statistics and Settings open directly. Desktop navigation and collection/music behavior remain intact.
 - Timeline tools use eight localized icons in one row, without Select all or Preview selection buttons. Ruler/audio-strip click and drag scrub the playhead; double-click adds a cut. Alt+drag preserves group movement. Boundary lines and downward triangle tips are centered on the actual sample boundary. Ctrl+wheel preserves the time under the pointer while zooming. The strip is 12 CSS pixels slimmer. Audio draft delete buttons align with their track selector row.
