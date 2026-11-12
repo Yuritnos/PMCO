@@ -2,13 +2,13 @@
 
 ## Credits
 
-- **Yuritnos** — project owner and maintainer.
-- **ChatGPT (OpenAI Codex)** — AI assistance with development, debugging, testing and documentation.
-- **Claude (Anthropic)** — AI development assistance.
+- **D7b9** — project owner and maintainer.
+- **ChatGPT (OpenAI Codex)** — development, debugging, testing and documentation.
+- **Claude (Anthropic)** — fundamental function exploiting.
 
 Source repository: [Yuritnos/PMCO](https://github.com/Yuritnos/PMCO).
 
-PMCO is an app for cataloguing physical music. It supports CD, vinyl, cassette, SACD, DVD, Blu-ray and Other media with free text (including USB/SD), plus mixed-media sets with one shared cover. You can record works, performers and edition details, group releases into favorites, and use English, Japanese or Simplified Chinese. The current Windows installers are PMCO 0.3.1 build 54.
+PMCO is an app for cataloguing physical music. It supports CD, vinyl, cassette, SACD, DVD, Blu-ray and Other media with free text (including USB/SD), plus mixed-media sets with one shared cover. You can record works, performers and edition details, group releases into favorites, and upload corresponding audio files.
 
 ### Try the physical-media preview
 
