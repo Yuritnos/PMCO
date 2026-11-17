@@ -38,7 +38,10 @@ async function fixture(options={}){
   const url=new URL(route.request().url());
   if(url.origin===base){
    if(url.pathname==='/audio-leveler.js')return route.continue();
-   if(url.pathname==='/')return route.fulfill({contentType:'text/html',body:html});
+   if(url.pathname==='/'){
+    const headers={};if(options.csp){const rules=JSON.parse(fs.readFileSync(path.join(root,'src-tauri/tauri.conf.json'),'utf8')).app.security.csp;rules['script-src']+=" 'sha256-"+require('node:crypto').createHash('sha256').update(html.match(/<script>([\s\S]*?)<\/script>/)[1]).digest('base64')+"'";headers['content-security-policy']=Object.entries(rules).map(([k,v])=>k+' '+v).join('; ');}
+    return route.fulfill({contentType:'text/html',headers,body:html});
+   }
    if(url.pathname==='/audio-leveler.js')return options.failModule?route.abort():route.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.join(root,'src/audio-leveler.js'))});
    if(url.pathname.startsWith('/fonts/')){const p=path.resolve(root,'src',url.pathname.slice(1));if(p.startsWith(path.join(root,'src','fonts')+path.sep)&&fs.existsSync(p))return route.fulfill({path:p});}
   }
@@ -98,6 +101,9 @@ async function main(){
    await page.locator('#pl-volume').fill('25');await page.waitForFunction(()=>Math.abs(qa41.Loudness.output.gain.value-0.25)<0.01);assert.equal(await page.locator('#player-audio').evaluate(n=>n.volume),1);
    await page.locator('#open-settings').click();await page.locator('#loudness-enabled').uncheck();await page.waitForFunction(()=>qa41.Loudness.node.parameters.get('enabled').value<0.01);await page.reload();assert(!await page.locator('#loudness-enabled').isChecked());assert.equal(await page.evaluate(()=>qa41.playMode.volume),0.25);
   }finally{await f.close();}
+ });
+ await test('packaged CSP permits the worklet and native-style audio without broadening script or connection access',async()=>{
+  const f=await fixture({csp:true});try{await play(f.page);await f.page.waitForFunction(()=>qa41.Loudness.node&&qa41.Loudness.context.state==='running');assert.equal(await f.page.locator('#loudness-status').textContent(),'');}finally{await f.close();}
  });
  await test('unavailable worklet or module failure retains normal playback and working volume controls',async()=>{
   for(const options of [{unsupported:true},{failModule:true}]){const f=await fixture(options),{page}=f;try{await play(page);await page.waitForFunction(()=>document.getElementById('loudness-status').textContent.includes('unavailable'));assert.equal(await page.evaluate(()=>qa41.Loudness.node),null);await page.locator('#pl-volume').fill('30');assert.equal(await page.locator('#player-audio').evaluate(n=>n.volume),0.3);}finally{await f.close();}}
