@@ -377,7 +377,10 @@ async fn tidy_covers(app: AppHandle) -> Result<u32, String> {
 /// Open CDC's download page on GitHub in the default browser. Only this fixed address is opened.
 #[tauri::command]
 async fn open_releases() -> Result<(), String> {
-    let url = "https://github.com/Yuritnos/PMCO/releases";
+    open_web_page("https://github.com/Yuritnos/PMCO/releases")
+}
+
+fn open_web_page(url: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let result = std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", url]).spawn();
     #[cfg(target_os = "macos")]
@@ -385,6 +388,46 @@ async fn open_releases() -> Result<(), String> {
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     let result = std::process::Command::new("xdg-open").arg(url).spawn();
     result.map(|_| ()).map_err(|e| format!("Could not open the page: {e}"))
+}
+
+fn feedback_url(kind: &str, title: &str, details: &str, build: &str) -> Result<String, String> {
+    if !["bug", "suggestion", "question"].contains(&kind) || title.trim().is_empty() || details.trim().is_empty()
+        || title.chars().count()>80 || details.chars().count()>600 || build.chars().count()>80
+        || title.chars().any(char::is_control) || build.chars().any(char::is_control) {
+        return Err("Enter a short feedback title and description.".into());
+    }
+    let mut url=reqwest::Url::parse("https://github.com/Yuritnos/PMCO/issues/new").unwrap();
+    let body=format!("Type: {kind}\nPMCO: {}\nBuild: {}\n\n{}",env!("CARGO_PKG_VERSION"),build.trim(),details.trim());
+    url.query_pairs_mut().append_pair("title",title.trim()).append_pair("body",&body);
+    if url.as_str().len()>7000 { return Err("Shorten the feedback before opening GitHub.".into()); }
+    Ok(url.into())
+}
+
+/// Open a user-reviewed public issue draft; no issue is submitted by the application.
+#[tauri::command]
+async fn open_feedback(kind:String,title:String,details:String,build:String)->Result<(),String> {
+    open_web_page(&feedback_url(&kind,&title,&details,&build)?)
+}
+
+#[cfg(test)]
+mod feedback_tests {
+    use super::*;
+    #[test]
+    fn draft_uses_fixed_repository_and_encodes_all_user_text() {
+        let value=feedback_url("bug","播放器 & labels=admin","Steps:\n中文 #test? &body=other","66 / abc123").unwrap();
+        let url=reqwest::Url::parse(&value).unwrap();
+        assert_eq!(url.host_str(),Some("github.com"));assert_eq!(url.path(),"/Yuritnos/PMCO/issues/new");
+        let pairs=url.query_pairs().collect::<Vec<_>>();assert_eq!(pairs.len(),2);
+        assert_eq!(pairs[0].1,"播放器 & labels=admin");assert!(pairs[1].1.ends_with("Steps:\n中文 #test? &body=other"));
+    }
+    #[test]
+    fn feedback_rejects_empty_oversized_or_control_inputs() {
+        assert!(feedback_url("unknown","Title","Text","66").is_err());
+        assert!(feedback_url("bug"," ","Text","66").is_err());
+        assert!(feedback_url("bug","Title\nInjected","Text","66").is_err());
+        assert!(feedback_url("bug","Title",&"a".repeat(601),"66").is_err());
+        assert!(feedback_url("question","Title","Text",&"a".repeat(81)).is_err());
+    }
 }
 
 /// Largest cover picture fetch_cover will download.
@@ -546,7 +589,8 @@ pub fn run() {
             save_cover,
             cover_data,
             tidy_covers,
-            open_releases
+            open_releases,
+            open_feedback
             ,cd_drive::list_cd_drives
             ,cd_drive::read_cd_disc
             ,cd_drive::start_cd_import

@@ -16,6 +16,12 @@
 #win-split { z-index:70; }
 #win-split-confirm { z-index:75; }
 #win-audio-remove { z-index:70; }
+.drive-dock { position:fixed; right:16px; bottom:24px; z-index:26; width:min(420px,calc(100% - 32px)); padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:0 6px 24px #0003; }
+.drive-dock strong { display:block; overflow-wrap:anywhere; }
+.drive-dock p { margin:6px 0 10px; }
+.drive-dock progress { width:100%; }
+body.with-player .drive-dock { bottom:170px; }
+#win-cd .panel-head h2 { flex:1; }
 .split-controls { border:0; padding:0; margin:0; min-width:0; }
 .split-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
 .split-actions button { min-height:36px; }
@@ -1410,6 +1416,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   <section class="panel cd-editor-panel" role="dialog" aria-modal="true" aria-labelledby="add-h">
     <div class="panel-head">
       <h2 id="add-h">Add a CD</h2>
+      <button type="button" class="iconbtn" id="minimize-cd" data-i18n-aria="driveMinimize" data-i18n-title="driveMinimize" hidden>−</button>
       <button type="button" class="iconbtn" id="close-cd" data-i18n-aria="close" aria-label="Close">×</button>
     </div>
     <aside class="disc-editor-tools" id="form-disc-tools" hidden>
@@ -1760,6 +1767,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       <button type="button" class="btn small quiet" id="audio-location-choose" data-i18n="audioLocationChoose">Choose folder…</button>
       <p class="hint" id="audio-location-status" role="status"></p>
     </div>
+    <div class="sect">
+      <h3 data-i18n="playbackSettings">Playback</h3>
+      <label class="check"><input type="checkbox" id="loudness-enabled" checked><span data-i18n="loudnessEnabled">Loudness equalization</span></label>
+      <p class="hint" data-i18n="loudnessHint">Smooths playback volume differences without changing audio files. This setting is local to this computer.</p>
+      <p class="hint" id="loudness-status" role="status"></p>
+    </div>
     <div class="sect" id="data-sect">
       <h3 class="settings-heading"><span data-i18n="dataSection">Your data</span> <button class="settings-info" type="button" data-help="exportNote" data-i18n-aria="info" aria-label="More information">ⓘ</button></h3>
       <div class="btnrow">
@@ -1801,6 +1814,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     <div class="sect" id="about-sect">
       <h3 data-i18n="aboutSection">About PMCO</h3>
       <p class="hint" id="app-version"></p>
+      <button type="button" class="btn small quiet" id="open-feedback" data-i18n="feedbackOpen">Send feedback</button>
       <div class="btnrow" id="update-row" hidden>
         <button type="button" class="btn small quiet" id="check-update" data-i18n="checkUpdate">Check for a new version</button>
       </div>
@@ -1811,6 +1825,26 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     <div class="actions" style="margin-top:22px">
       <button type="button" class="btn" id="done-settings" data-i18n="done">Done</button>
     </div>
+  </section>
+</div>
+
+<aside class="drive-dock" id="drive-dock" hidden data-i18n-aria="driveOpen" aria-label="CD import">
+  <strong id="drive-dock-title"></strong><p class="hint" id="drive-dock-status" role="status"></p>
+  <progress id="drive-dock-progress" max="100" value="0" data-i18n-aria="driveProgress"></progress>
+  <div class="btnrow"><button type="button" class="btn small" id="drive-restore"></button><button type="button" class="btn small quiet" id="drive-dock-cancel" data-i18n="driveCancel">Cancel copying</button></div>
+</aside>
+
+<div class="overlay" id="win-feedback" hidden>
+  <section class="panel narrow" role="dialog" aria-modal="true" aria-labelledby="feedback-head">
+    <div class="panel-head"><h2 id="feedback-head" data-i18n="feedbackOpen">Send feedback</h2><button type="button" class="iconbtn" id="close-feedback" data-i18n-aria="close">×</button></div>
+    <p class="hint" data-i18n="feedbackHint">Opens a public GitHub issue draft for you to review and submit. A GitHub account is required. Include only information you want to share publicly.</p>
+    <form id="feedback-form" novalidate>
+      <div class="field"><label class="lbl" for="feedback-kind" data-i18n="feedbackKind">Type</label><select class="input" id="feedback-kind"><option value="bug" data-i18n="feedbackBug">Bug report</option><option value="suggestion" data-i18n="feedbackSuggestion">Suggestion</option><option value="question" data-i18n="feedbackQuestion">Question</option></select></div>
+      <div class="field"><label class="lbl" for="feedback-title" data-i18n="feedbackTitle">Title</label><input class="input" id="feedback-title" maxlength="80" data-autofocus></div>
+      <div class="field"><label class="lbl" for="feedback-details" data-i18n="feedbackDetails">Description and steps</label><textarea class="input" id="feedback-details" rows="6" maxlength="600"></textarea></div>
+      <p class="err" id="feedback-error" role="alert"></p>
+      <div class="actions"><button type="submit" class="btn" id="feedback-submit" data-i18n="feedbackSubmit">Open GitHub draft</button><button type="button" class="btn quiet" id="feedback-cancel" data-i18n="cancel">Cancel</button></div>
+    </form>
   </section>
 </div>
 
@@ -2000,16 +2034,13 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
 
 <!-- Player: plays a CD's audio from the library while the person browses -->
 <div class="player" id="player" role="region" data-i18n-aria="playerRegion" aria-label="Player" hidden>
-  <audio id="player-audio" preload="metadata"></audio>
+  <audio id="player-audio" preload="metadata" crossorigin="anonymous"></audio>
   <div class="pl-cover" id="pl-cover"></div>
   <div class="pl-info">
     <strong id="pl-title"></strong>
     <span id="pl-disc"></span>
   </div>
   <div class="pl-controls">
-    <button type="button" class="pl-btn small" id="pl-shuffle" aria-pressed="false" data-i18n-aria="playerShuffle" aria-label="Shuffle">
-      <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16 4h4v4M4 20 20 4M20 16v4h-4M15 15l5 5M4 4l5 5"/></svg>
-    </button>
     <button type="button" class="pl-btn" id="pl-prev" data-i18n-aria="playerPrev" aria-label="Previous track">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
     </button>
@@ -2020,9 +2051,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     <button type="button" class="pl-btn" id="pl-next" data-i18n-aria="playerNext" aria-label="Next track">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
     </button>
-    <button type="button" class="pl-btn small" id="pl-repeat" aria-label="Repeat">
-      <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></svg>
-      <span class="pl-one" id="pl-repeat-one" hidden>1</span>
+    <button type="button" class="pl-btn small" id="pl-mode" aria-label="Playback mode">
+      <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path id="pl-mode-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="pl-one" id="pl-mode-one" hidden>1</span>
     </button>
   </div>
   <div class="pl-seek">
@@ -2842,6 +2873,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   Object.assign(I18N.en, {"audioRemoveHead": "Remove audio?", "audioRemoveAsk": "Remove “{name}” from this item? Its local copy, if present, will also be deleted.", "audioRemoveFailed": "Could not save the removal. Your audio is retained. Try again.", "audioRemoveCleanup": "Audio removed from the item. Its local file could not be deleted."});
   Object.assign(I18N.ja, {"audioRemoveHead": "音声を削除しますか？", "audioRemoveAsk": "このメディアから「{name}」を削除しますか？このコンピューターにあるコピーも削除されます。", "audioRemoveFailed": "削除を保存できませんでした。音声は保持されています。再試行してください。", "audioRemoveCleanup": "メディアから音声を外しましたが、ローカルファイルを削除できませんでした。"});
   Object.assign(I18N.zh, {"audioRemoveHead": "删除音频？", "audioRemoveAsk": "从本件移除「{name}」？本机上的音频副本（如有）也会删除。", "audioRemoveFailed": "无法保存删除操作，音频仍保留。请重试。", "audioRemoveCleanup": "已从本件移除音频，但无法删除本机文件。"});
+  Object.assign(I18N.en, {"driveMinimize": "Minimize import", "driveRestore": "Show import", "driveReview": "Review imported audio", "playbackSettings": "Playback", "loudnessEnabled": "Loudness equalization", "loudnessHint": "Smooths playback volume differences without changing audio files. This setting is local to this computer.", "loudnessUnavailable": "Equalization is unavailable in this playback environment. Audio plays normally.", "feedbackOpen": "Send feedback", "feedbackHint": "Opens a public GitHub issue draft for you to review and submit. A GitHub account is required. Include only information you want to share publicly.", "feedbackKind": "Type", "feedbackBug": "Bug report", "feedbackSuggestion": "Suggestion", "feedbackQuestion": "Question", "feedbackTitle": "Title", "feedbackDetails": "Description and steps", "feedbackSubmit": "Open GitHub draft", "feedbackRequired": "Enter a title and description.", "feedbackFailed": "Could not open GitHub. Try shorter text or try again.", "playerMode.sequence": "Sequential · repeat all", "playerMode.shuffle": "Shuffle", "playerMode.one": "Repeat one", "playerModeHint": "Click to change playback mode"});
+  Object.assign(I18N.ja, {"driveMinimize": "取り込みを最小化", "driveRestore": "取り込みを表示", "driveReview": "取り込んだ音声を確認", "playbackSettings": "再生", "loudnessEnabled": "ラウドネス均等化", "loudnessHint": "音声ファイルを変更せず、再生音量の差を緩やかに調整します。この設定はこのパソコンだけに保存します。", "loudnessUnavailable": "この再生環境では均等化を利用できません。通常の音量で再生します。", "feedbackOpen": "開発者にフィードバック", "feedbackHint": "GitHubの公開Issueの下書きを開き、確認してから送信できます。GitHubアカウントが必要です。公開してよい情報だけを記入してください。", "feedbackKind": "種類", "feedbackBug": "不具合の報告", "feedbackSuggestion": "改善の提案", "feedbackQuestion": "質問", "feedbackTitle": "件名", "feedbackDetails": "説明と再現手順", "feedbackSubmit": "GitHubで下書きを開く", "feedbackRequired": "件名と説明を入力してください。", "feedbackFailed": "GitHubを開けませんでした。文章を短くするか、もう一度お試しください。", "playerMode.sequence": "順番に再生・全曲リピート", "playerMode.shuffle": "シャッフル", "playerMode.one": "1曲リピート", "playerModeHint": "クリックで再生モードを切り替え"});
+  Object.assign(I18N.zh, {"driveMinimize": "最小化导入窗口", "driveRestore": "显示导入窗口", "driveReview": "检查导入的音频", "playbackSettings": "播放", "loudnessEnabled": "响度均衡", "loudnessHint": "平缓调整播放音量差异，不修改音频文件。此设置仅保存在本机。", "loudnessUnavailable": "当前播放环境无法使用响度均衡，音频按原音量正常播放。", "feedbackOpen": "向开发者反馈", "feedbackHint": "在 GitHub 打开公开问题草稿，检查后由你提交。需要 GitHub 账号，请仅填写愿意公开的信息。", "feedbackKind": "类型", "feedbackBug": "报告问题", "feedbackSuggestion": "改进建议", "feedbackQuestion": "使用咨询", "feedbackTitle": "标题", "feedbackDetails": "说明与复现步骤", "feedbackSubmit": "打开 GitHub 草稿", "feedbackRequired": "请填写标题和说明。", "feedbackFailed": "无法打开 GitHub，请缩短文字或重试。", "playerMode.sequence": "顺序播放（全曲循环）", "playerMode.shuffle": "随机播放", "playerMode.one": "单曲循环", "playerModeHint": "点击切换播放模式"});
   /* Missing medium is a legacy CD. Medium never replaces musical form (type). */
   Object.assign(I18N.en, {condition: "Media condition", navMore: "More"});
   Object.assign(I18N.ja, {condition: "メディアの状態", navMore: "その他"});
@@ -3396,6 +3430,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   function applyAll() {
     applyI18n();
     if (CdDrive) CdDrive.translate();
+    if (Loudness) Loudness.render();
     if (Cloud && !$("win-profile").hidden) {
       renderHandlePolicy();
       $("pf-email").textContent = t("signedInAs", { email: Cloud.email() });
@@ -7521,7 +7556,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     finally { button.disabled = false; }
   });
   window.addEventListener("beforeunload", function (event) {
-    if (audioLocationBusy || !$("storage-notice").hidden || (!$("win-cd").hidden && cdFormDirty())) { event.preventDefault(); event.returnValue = ""; }
+    if (audioLocationBusy || (CdDrive && CdDrive.busy) || !$("storage-notice").hidden || (discSession && cdFormDirty())) { event.preventDefault(); event.returnValue = ""; }
   });
   var audioLocationBusy = false;
   async function renderAudioLocation() {
@@ -7589,6 +7624,24 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       : t("aboutWeb");
     $("update-row").hidden = !IS_TAURI;
   }
+  ["close-feedback","feedback-cancel"].forEach(function(id){$(id).addEventListener("click",function(){closeWin("feedback");});});
+  $("open-feedback").addEventListener("click",function(){$("feedback-error").textContent="";openWin("feedback");});
+  $("feedback-form").addEventListener("submit",async function(event){
+    event.preventDefault();var title=$("feedback-title").value.trim(),details=$("feedback-details").value.trim();
+    if(!title||!details){$("feedback-error").textContent=t("feedbackRequired");(!title?$("feedback-title"):$("feedback-details")).focus();return;}
+    var button=$("feedback-submit"),b=window.CDC_BUILD,build=b?String(b.run)+" / "+String(b.commit):"Browser preview";
+    var args={kind:$("feedback-kind").value,title:title,details:details,build:build};button.disabled=true;$("feedback-error").textContent="";
+    try {
+      if(IS_TAURI)await AudioLib.call("open_feedback",args);
+      else {
+        var url=new URL("https://github.com/Yuritnos/PMCO/issues/new");url.searchParams.set("title",title);
+        url.searchParams.set("body","Type: "+args.kind+"\nPMCO: "+(appVersion||"Browser preview")+"\nBuild: "+build+"\n\n"+details);
+        if(url.href.length>7000)throw Error("too long");
+        var link=document.createElement("a");link.href=url.href;link.target="_blank";link.rel="noopener noreferrer";link.click();
+      }
+    } catch(error){$("feedback-error").textContent=t("feedbackFailed");}
+    finally {button.disabled=false;}
+  });
   /* Is version a (like "0.3.0") newer than b? */
   function newerVersion(a, b) {
     var x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
@@ -8523,6 +8576,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     rememberCdForm();
   }
   function openAdd(musicOnly) {
+    if(CdDrive && (CdDrive.busy || CdDrive.minimized)){CdDrive.restore();return;}
     if (musicOnly) clearForm(true);
     if (!formMusicOnly && !editingId && !discSession) $("medium").value = defaultMediumForView();
     if (!editingId) {
@@ -8539,6 +8593,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     openWin("cd");
   }
   function startEdit(cd) {
+    if(CdDrive && (CdDrive.busy || CdDrive.minimized)){CdDrive.restore();return;}
     clearForm(isMusicOnly(cd));
     $("collection-quantity").value = collectionQuantity(cd);
     loadDiscEditor(cd, false, true);
@@ -10197,23 +10252,68 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
     var e = currentEntry();
     if (!e) return;
     audioEl.src = AudioLib.url(e.file);
+    if(autoplay&&Loudness)Loudness.start();
     if (autoplay) audioEl.play().catch(function () { /* the error event reports real failures */ });
     savePlaylist();
     renderPlayer();
   }
   function togglePlay() {
+    if(Loudness)Loudness.start();
     if (!audioEl.getAttribute("src")) { loadTrack(true); return; }
     if (audioEl.paused) audioEl.play().catch(function () {}); else audioEl.pause();
   }
-  /* Shuffle, repeat ("off", "all" or "one") and volume, remembered on this computer
-     (localStorage "cdc.playmode"). With shuffle on, Next picks a track not played yet in this round
-     and Previous goes back through the ones played (player.history). */
-  var playMode = { shuffle: false, repeat: "off", volume: 1, muted: false };
-  try { Object.assign(playMode, JSON.parse(localStorage.getItem("cdc.playmode") || "{}")); } catch (e) { /* storage unavailable */ }
-  if (["off", "all", "one"].indexOf(playMode.repeat) === -1) playMode.repeat = "off";
+  /* One exclusive mode; migrate the older shuffle/repeat flags without changing volume. */
+  var playMode={shuffle:false,repeat:"all",mode:"sequence",volume:1,muted:false,loudness:true};
+  try {
+    var savedPlayMode=JSON.parse(localStorage.getItem("cdc.playmode")||"{}");
+    if(savedPlayMode && typeof savedPlayMode==="object") {
+      playMode.mode=["sequence","shuffle","one"].indexOf(savedPlayMode.mode)>=0?savedPlayMode.mode:savedPlayMode.repeat==="one"?"one":savedPlayMode.shuffle?"shuffle":"sequence";
+      if(typeof savedPlayMode.volume==="number" && isFinite(savedPlayMode.volume))playMode.volume=Math.max(0,Math.min(1,savedPlayMode.volume));
+      playMode.muted=savedPlayMode.muted===true;playMode.loudness=savedPlayMode.loudness!==false;
+    }
+  }catch(error){}
+  playMode.shuffle=playMode.mode==="shuffle";playMode.repeat=playMode.mode==="one"?"one":"all";
   function savePlayMode() {
     try { localStorage.setItem("cdc.playmode", JSON.stringify(playMode)); } catch (e) { /* storage unavailable */ }
   }
+  /* The worklet streams bounded audio blocks on the audio thread. Volume sits AFTER
+     normalization so a user's volume/mute changes cannot be counteracted by gain. */
+  var Loudness=(function(){
+    var context=null,source=null,node=null,output=null,pending=null,unavailable=false;
+    function status(){ $("loudness-enabled").checked=playMode.loudness;$("loudness-status").textContent=playMode.loudness&&unavailable?t("loudnessUnavailable"):""; }
+    function volume(){
+      if(output){audioEl.volume=1;audioEl.muted=false;output.gain.setTargetAtTime(playMode.muted?0:playMode.volume,context.currentTime,0.015);}
+      else {audioEl.volume=playMode.volume;audioEl.muted=playMode.muted;}
+    }
+    function enabled(){if(node)node.parameters.get("enabled").setTargetAtTime(playMode.loudness?1:0,context.currentTime,0.02);status();}
+    async function start(){
+      if(context)context.resume().catch(function(){});
+      if(node||pending||!playMode.loudness)return pending;
+      var AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtx||!window.AudioWorkletNode){unavailable=true;status();return;}
+      pending=(async function(){
+        try {
+          context=context||new AudioCtx();context.resume().catch(function(){});
+          if(!context.audioWorklet)throw Error("worklet unavailable");
+          await context.audioWorklet.addModule("audio-leveler.js");
+          node=new AudioWorkletNode(context,"pmco-leveler",{numberOfInputs:1,numberOfOutputs:1,channelCountMode:"max"});
+          output=context.createGain();output.gain.value=playMode.muted?0:playMode.volume;
+          node.connect(output);output.connect(context.destination);
+          source=source||context.createMediaElementSource(audioEl);source.disconnect();source.connect(node);
+          node.addEventListener("processorerror",function(){source.disconnect();source.connect(output);node=null;unavailable=true;status();});
+          unavailable=false;enabled();volume();
+        }catch(error){
+          if(source&&output){source.disconnect();source.connect(output);}else {node=null;output=null;}
+          unavailable=true;volume();status();
+        }finally{pending=null;}
+      })();return pending;
+    }
+    audioEl.addEventListener("play",start);
+    audioEl.addEventListener("loadstart",function(){if(node)node.port.postMessage({reset:true});});
+    $("loudness-enabled").addEventListener("change",function(){playMode.loudness=this.checked;savePlayMode();enabled();if(playMode.loudness&&!audioEl.paused)start();});
+    status();
+    return {start:start,volume:volume,render:status,get context(){return context;},get node(){return node;},get output(){return output;}};
+  })();
   /* The index Next goes to, or -1. `peek` only asks, without starting a new shuffle round. */
   function nextIndex(peek) {
     var n = player.queue.length;
@@ -10223,7 +10323,7 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
       var left = [];
       player.queue.forEach(function (e, i) { if (i !== player.index && played.indexOf(e) === -1) left.push(i); });
       if (!left.length) {
-        if (playMode.repeat !== "all") return -1;
+        // Start another shuffle round after all other entries have played.
         if (peek) return 0;
         player.played = [];
         player.queue.forEach(function (e, i) { if (i !== player.index || n === 1) left.push(i); });
@@ -10231,11 +10331,10 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
       return peek ? left[0] : left[Math.floor(Math.random() * left.length)];
     }
     if (player.index < n - 1) return player.index + 1;
-    return playMode.repeat === "all" ? 0 : -1;
+    return 0;
   }
   function hasPrev() {
-    return audioEl.currentTime > 3 || player.index > 0 || playMode.repeat === "all" ||
-      (playMode.shuffle && !!(player.history && player.history.length));
+    return player.queue.length>0;
   }
   /* Go to another track; the one left behind counts as played (for shuffle). */
   function jumpTo(i, remember) {
@@ -10260,19 +10359,16 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
       if (back !== -1) jumpTo(back, false);
       return;
     }
-    var prev = player.index > 0 ? player.index - 1 : playMode.repeat === "all" ? player.queue.length - 1 : -1;
+    var prev = player.index > 0 ? player.index - 1 : player.queue.length-1;
     if (prev !== -1) jumpTo(prev, false);
   }
   function renderPlayMode() {
     if (!playMode) return;
-    $("pl-shuffle").setAttribute("aria-pressed", playMode.shuffle ? "true" : "false");
-    var rep = $("pl-repeat");
-    rep.classList.toggle("on", playMode.repeat !== "off");
-    rep.setAttribute("aria-label", t("playerRepeat." + playMode.repeat));
-    rep.title = t("playerRepeat." + playMode.repeat);
-    $("pl-repeat-one").hidden = playMode.repeat !== "one";
-    audioEl.volume = playMode.volume;
-    audioEl.muted = playMode.muted;
+    var button=$("pl-mode"),label=t("playerMode."+playMode.mode)+" · "+t("playerModeHint");
+    button.setAttribute("aria-label",label);button.title=label;button.dataset.mode=playMode.mode;
+    $("pl-mode-icon").setAttribute("d",playMode.mode==="shuffle"?"M16 4h4v4M4 20 20 4M20 16v4h-4M15 15l5 5M4 4l5 5":"M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4");
+    $("pl-mode-one").hidden=playMode.mode!=="one";
+    if(Loudness)Loudness.volume();else {audioEl.volume=playMode.volume;audioEl.muted=playMode.muted;}
     if (document.activeElement !== $("pl-volume")) $("pl-volume").value = Math.round(playMode.volume * 100);
     var silent = playMode.muted || playMode.volume === 0;
     $("pl-mute").setAttribute("aria-pressed", playMode.muted ? "true" : "false");
@@ -11022,17 +11118,10 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
     var next = nextIndex(false);
     if (next !== -1) jumpTo(next, true); else renderPlayer();
   });
-  $("pl-shuffle").addEventListener("click", function () {
-    playMode.shuffle = !playMode.shuffle;
-    player.played = [];
-    player.history = [];
-    savePlayMode();
-    renderPlayer();
-  });
-  $("pl-repeat").addEventListener("click", function () {
-    playMode.repeat = { off: "all", all: "one", one: "off" }[playMode.repeat];
-    savePlayMode();
-    renderPlayer();
+  $("pl-mode").addEventListener("click",function(){
+    playMode.mode={sequence:"shuffle",shuffle:"one",one:"sequence"}[playMode.mode];
+    playMode.shuffle=playMode.mode==="shuffle";playMode.repeat=playMode.mode==="one"?"one":"all";
+    player.played=[];player.history=[];savePlayMode();renderPlayer();
   });
   $("pl-mute").addEventListener("click", function () {
     playMode.muted = !playMode.muted;
@@ -11657,8 +11746,27 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
 
   /* ---------- CD-drive audio import ---------- */
   var CdDrive = (function () {
-    var run = 0, disc = null, busy = false, job = null, cancelRequested = false, closing = null, locked = [], reading = false, statusKey = "", statusValues = null;
-    function status(key, values) { statusKey = key; statusValues = values; $("drive-status").textContent = key ? t(key, values) : ""; }
+    var run = 0, disc = null, busy = false, job = null, cancelRequested = false, closing = null, locked = [], reading = false, statusKey = "", statusValues = null, minimized=false, scroll=0;
+    function dock() {
+      $("drive-dock").hidden=!minimized;$("minimize-cd").hidden=!busy;
+      $("drive-dock-title").textContent=$("title").value.trim()||t("driveOpen");
+      var text=statusKey?t(statusKey,statusValues):"";if($("drive-dock-status").textContent!==text)$("drive-dock-status").textContent=text;
+      $("drive-dock-progress").hidden=!busy;$("drive-dock-progress").value=$("drive-progress").value;
+      $("drive-restore").textContent=t(busy?"driveRestore":"driveReview");
+      $("drive-dock-cancel").hidden=!busy;$("drive-dock-cancel").disabled=cancelRequested;
+    }
+    function status(key, values) { statusKey=key;statusValues=values;$("drive-status").textContent=key?t(key,values):"";dock(); }
+    function minimize() {
+      if(!busy)return;
+      var ov=$("win-cd");scroll=ov.querySelector(".panel").scrollTop;minimized=true;
+      ov.hidden=true;stack=stack.filter(function(id){return id!=="cd";});if(!stack.length)document.body.style.overflow="";
+      dock();$("drive-restore").focus({preventScroll:true});
+    }
+    function restore() {
+      minimized=false;dock();openWin("cd");
+      $("win-cd").querySelector(".panel").scrollTop=scroll;
+      (busy?$("minimize-cd"):$("submit")).focus({preventScroll:true});
+    }
     function translate() { status(statusKey,statusValues); if(disc)showTracks(); }
     function error(e) {
       var code = String(e && e.message || e), keys = { drive_missing:"driveMissing", drive_access:"driveAccess", drive_empty:"driveEmpty", drive_disc:"driveEmpty", drive_data:"driveData", drive_disc_feature:"driveDiscFeature", drive_changed:"driveChanged", drive_read:"driveReadError", drive_space:"driveSpace", drive_write:"driveWrite", drive_encoder:"driveEncoder", drive_windows:"driveWindows", drive_busy:"driveBusy", drive_cancelled:"driveCancelled" };
@@ -11666,7 +11774,7 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
     }
     function reset() {
       if (busy) return;
-      run++; reading = false; disc = null; job = null;
+      run++; reading = false; disc = null; job = null;minimized=false;dock();
       $("drive-panel").hidden = true; $("drive-open").setAttribute("aria-expanded", "false");
       $("drive-preview").hidden = true; $("drive-progress").hidden = true; $("drive-cancel").hidden = true;
       $("drive-device").textContent = ""; $("drive-tracks").textContent = "";
@@ -11706,7 +11814,7 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
     function lock(on) {
       if (on) { locked = qsa("#cd-form input, #cd-form select, #cd-form textarea, #cd-form button").map(function (n) { var entry = [n,n.disabled]; n.disabled = n.id !== "drive-cancel"; return entry; }); }
       else { locked.forEach(function (entry) { if (entry[0].isConnected) entry[0].disabled = entry[1]; }); locked = []; }
-      $("drive-cancel").hidden = !on; $("drive-progress").hidden = !on;
+      $("drive-cancel").hidden = !on; $("drive-progress").hidden = !on;dock();
     }
     async function cancel(close, force) {
       if (!busy) return;
@@ -11773,8 +11881,10 @@ $("win-split").addEventListener("keydown",function(e){var ed=splitEditor;if(!ed|
     $("drive-refresh").addEventListener("click",refresh); $("drive-read").addEventListener("click",read);
     $("drive-copy").addEventListener("click",copy);
     $("drive-cancel").addEventListener("click",function () { cancel(false); });
+    $("minimize-cd").addEventListener("click",minimize);$("drive-restore").addEventListener("click",restore);
+    $("drive-dock-cancel").addEventListener("click",function(){cancel(false);});
     $("drive-device").addEventListener("change",function () { if(busy)return;run++;reading=false;disc=null;$("drive-preview").hidden=true;$("drive-read").disabled=false;status("driveReady"); });
-    return { get busy() { return busy; }, reset:reset, cancel:cancel, translate:translate };
+    return { get busy() { return busy; }, get minimized(){return minimized;}, restore:restore, reset:reset, cancel:cancel, translate:translate };
   })();
 
   /* ---------- start ---------- */

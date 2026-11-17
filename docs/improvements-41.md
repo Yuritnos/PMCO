@@ -1,0 +1,20 @@
+# Improvements 4.1
+
+Implemented from the owner's four suggestions in `PMCO改进建议4.1.docx`, 17 November 2026. Version remains 0.3.1; build and website delivery evidence belongs in `STATUS.md`.
+
+| Suggestion | Implemented behavior |
+| --- | --- |
+| Minimize CD importing | The import editor's minus button hides the editor while preserving its mounted fields, draft identity and job. A compact progress panel offers Restore and Cancel. Browsing, searching, playback and Settings remain usable. Another Add/Edit action restores the existing draft instead of replacing it. Completion remains available for review and Save; cancellation, errors and late adoption preserve draft ownership. Changing the audio folder remains unavailable while a draft is open. Closing/reloading warns about active work or unsaved drafts. |
+| Developer feedback | Settings → About → Send feedback opens a localized type/title/description form. The explicit action opens a public GitHub issue draft in `Yuritnos/PMCO` for review and submission. GitHub sign-in is required; PMCO itself does not post the issue. Only the entered text and app/build version are included. Native code fixes the destination and bounds/encodes the inputs. Text survives cancellation or an opening failure. |
+| Loudness equalization | Enabled by default, with a computer-local Settings checkbox. A streaming AudioWorklet measures channel energy separately, smooths gain changes and limits linked peaks without modifying files or decoding whole tracks into memory. Volume and mute apply after processing. The estimate resets for each loaded track. Unsupported environments/module failures keep ordinary playback and report the limitation in Settings. |
+| One playback-mode button | The icon cycles Sequential → Shuffle → Repeat one. Sequential wraps from the last queue entry to the first. Shuffle starts a new round after exhausting other entries; Repeat one restarts the current entry on completion. Manual track navigation stays available. Existing shuffle/repeat preferences migrate to one exclusive mode while retaining volume/mute. Mode changes preserve the queue and playing entry. |
+
+Equalization is adaptive playback processing, with a target RMS of about −18 dBFS, gain bounded to approximately −18/+12 dB and a linked sample-peak ceiling of 0.95. It is not an offline LUFS scan or file-level ReplayGain tagging. Slow estimation/boosting and silence hold reduce pumping; individual recordings can still differ perceptually. Disabled processing passes source samples through unchanged before the user's volume control.
+
+## Verification
+
+109 browser/sample checks passed with isolated files/devices/services: `tests/improvements-41.cjs` (10), `tests/loudness.cjs` (6), `tests/drive-import.cjs` (15), `tests/collection-integration.cjs` (38), `tests/persistence-recovery.cjs` (14), `tests/audio-draft.cjs` (7), and `tests/improvements-34.cjs` (19). Focused reruns cover corrected progress-element/compact-navigation assertions and final dialog stacking. Real Worklet loading uses a fixture-only local HTTP server because browser request interception does not intercept Worklet module loading.
+
+Coverage includes import completion/cancellation/error/adoption races, retaining the original draft, browsing and playback during import, queue wrapping/shuffle rounds/single repeat, legacy mode migration, persistent equalization/volume, native-style cross-origin audio, graceful module failure, feedback validation and English/Japanese/Chinese layouts in both themes at 360/1280px. Deterministic sample tests compare quiet/loud signals, opposite-phase stereo, transient limiting, disabled transparency, silence/reset and multichannel blocks. Screenshots were inspected at 420/1280px. Native feedback URL tests are included in `cargo test --locked --lib`; final CI results and delivery hashes are recorded in `STATUS.md`.
+
+The owner's collection, account and physical drive were not used. Installed WebView2 output and a real optical drive remain environment checks; automated playback uses generated WAV samples and a mocked native asset origin.
