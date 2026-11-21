@@ -1,8 +1,16 @@
 # PMCO current status
 
-Updated: 2026-11-17 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
+Updated: 2026-11-21 (Asia/Shanghai). Read `AGENTS.md` for project rules. Verify git/build state before continuing.
 
-## Current milestone: improvements 4.1 — PMCO 0.3.1 build 66 published (2026-11-17)
+## Current milestone: editor presets and Discogs imports — PMCO 0.3.1 build 68 published (2026-11-21)
+
+- Inner Ring Manufacturing and Media Condition reopen with the full preset lists after a value is entered. Both accept free text and offer keyboard selection.
+- Catalogue **423 090-2** saves the four Chopin ballades, Barcarolle and Fantasie as six independent works with their original durations. Catalogue **439 009-2** saves one CD with two works and five audio slots. Positions `5.1`–`5.8` belong to track 5, *Die Moldau* (**12:40**).
+- **74 frontend checks and 42 native tests passed**, including lookup and save with both Discogs fixtures, preset reopening, localization, genuine multi-disc imports and scoped credits. [Windows CI run 44893420420](https://github.com/Yuritnos/PMCO/actions/runs/44893420420) built **2c563c8c0bce9715b1d028749c6376f9bdf52cbc**. Artifact **14703316419** matched GitHub’s ZIP digest. Both packages passed integrity, x64 metadata, MSI upgrade identity, pinned FLAC resources and normalized payload checks.
+- Replaced the local NSIS and MSI installers from staging. Production advertises build 68, and both live downloads match their verified byte counts and SHA-256 hashes. The three English pages, sitemap, locale redirects, ownership files and missing-page response passed verification. [PMCO downloads](https://pmco.pages.dev/#downloads), [Cloudflare deployment](https://fa03a43e.pmco.pages.dev/).
+- Build and publication evidence is under **installers/staging-0.3.1-44893420420/**. The prior installers, source and website release metadata are under **installers/rollback-before-build68-20261121/**.
+
+## Previous milestone: improvements 4.1 — PMCO 0.3.1 build 66 published (2026-11-17)
 
 - CD import can minimize to a compact progress/Restore/Cancel panel while browsing, searching, playback and Settings remain available. The original editor/draft stays mounted; competing Add/Edit actions restore it. Completion awaits review/Save; cancellation, errors and late adoption preserve ownership and unsaved-work protection.
 - Settings → About offers localized developer feedback, opening a user-reviewed public GitHub issue draft. Native code fixes the repository, bounds and encodes text, and includes only entered content plus app/build version. No issue is submitted by PMCO.
