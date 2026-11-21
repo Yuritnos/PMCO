@@ -162,6 +162,49 @@ async function main() {
       await page.locator('#medium').selectOption('sacd'); assert.equal(await page.locator('label[for=audioPrograms]').textContent(),'Audio channels');
     } finally {await f.close();}
   });
+  await test('filled hub and condition reopen with every preset and accept custom text', async () => {
+    const {page, state, close} = await fixture();
+    try {
+      await page.setViewportSize({width: 400, height: 700});
+      await page.evaluate(() => mediaQA.startEdit({id: 'old', title: 'Legacy CD', hub: 'clear', condition: 'VG+'}));
+      await page.locator('#more-details').evaluate(details => { details.open = true; });
+      const hub = page.locator('#hub'), condition = page.locator('#condition');
+      const hubMenu = page.locator('#hub-options'), conditionMenu = page.locator('#condition-options');
+      const hubs = ['Full silver hub', 'Partial silver hub', 'Clear hub', 'Other'];
+      const grades = ['M', 'NM', 'VG+', 'VG', 'G+', 'G', 'F', 'P'];
+
+      await hub.click();
+      assert(await hubMenu.isVisible());
+      assert.deepEqual(await hubMenu.getByRole('option').allTextContents(), hubs);
+      assert.equal(await hub.inputValue(), 'Clear hub');
+      await hubMenu.getByRole('option', {name: 'Partial silver hub'}).click();
+      assert.equal(await hub.inputValue(), 'Partial silver hub');
+      await hub.click();
+      assert.deepEqual(await hubMenu.getByRole('option').allTextContents(), hubs);
+      await hub.press('Escape');
+      assert(await hubMenu.isHidden());
+      assert(await page.locator('#win-cd').isVisible());
+
+      await condition.click();
+      assert.equal(await condition.inputValue(), 'VG+');
+      assert.deepEqual(await conditionMenu.getByRole('option').allTextContents(), grades);
+      await condition.press('ArrowDown');
+      await condition.press('ArrowDown');
+      assert.equal(await conditionMenu.getByRole('option', {selected: true}).textContent(), 'NM');
+      await condition.press('Enter');
+      assert.equal(await condition.inputValue(), 'NM');
+      assert(await conditionMenu.isHidden());
+      await condition.fill('VG+ (disc only)');
+      await condition.click();
+      assert.deepEqual(await conditionMenu.getByRole('option').allTextContents(), grades);
+      await condition.press('Tab');
+      assert(await conditionMenu.isHidden());
+      await save(page);
+      const item = state.doc.cds.find(cd => cd.id === 'old');
+      assert.equal(item.hub, 'partial');
+      assert.equal(item.condition, 'VG+ (disc only)');
+    } finally { await close(); }
+  });
   await test('format headings and custom Other names localize safely; works hints omit printed numbering',async()=>{
     const f=await fixture(),{page}=f;
     try {
@@ -304,6 +347,36 @@ async function main() {
       await page.evaluate(cd=>mediaQA.startEdit(cd),discs[1]);
       assert.equal(await page.locator('#matrixRunout').inputValue(),'427 613-2 01 #');
     } finally {await f.close();}
+  });
+  await test('catalogue 439 009-2 saves one CD with two works and five audio slots', async () => {
+    const {page, state, close} = await fixture();
+    const release = require('./fixtures/discogs-27001707.json');
+    const catno = release.labels[0].catno;
+    try {
+      await page.route('https://api.discogs.com/database/search?**', route => route.fulfill({json: {results: [
+        {id: release.id, title: release.title, catno, format: ['CD']}
+      ]}}));
+      await page.route('https://api.discogs.com/releases/' + release.id, route => route.fulfill({json: release}));
+      await page.locator('#open-add').click();
+      await page.locator('#lookup-q').fill(catno);
+      await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').click();
+      await page.waitForFunction(() => document.getElementById('title').value.includes('Moldau'));
+      assert.equal(await page.locator('#set-choice').inputValue(), '');
+      assert.equal(await page.locator('#work-list .work').count(), 2);
+      await save(page);
+
+      const added = state.doc.cds.filter(cd => cd.catalogNo === catno);
+      assert.equal(added.length, 1);
+      const [cd] = added;
+      assert.equal(cd.medium, 'cd');
+      assert.equal(cd.set, undefined);
+      assert.deepEqual(cd.works.map(work => work.composer), ['Antonín Dvořák', 'Bedřich Smetana']);
+      assert.deepEqual(cd.works.map(work => work.tracks.length), [4, 0]);
+      assert.equal(cd.works[1].duration, '12:40');
+      const slots = await page.evaluate(item => mediaQA.discTracks(item), cd);
+      assert.deepEqual(slots.map(slot => slot.duration), ['9:58', '12:27', '8:36', '11:25', '12:40']);
+    } finally { await close(); }
   });
   await test('card titles stop after three lines and quantity badges appear only for multiple copies',async()=>{
     const title='Rachmaninov · Piano Concerto No. 2 / Prokofiev · Piano Concerto No. 5 (Klavierkonzerte · Concertos Pour Piano)';

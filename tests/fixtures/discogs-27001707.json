@@ -1,0 +1,43 @@
+{
+  "id": 27001707,
+  "title": "Dvořák: Symphonie No. 9 »Aus Der Neuen Welt« / Smetana: Moldau",
+  "formats": [{ "name": "CD", "qty": "1" }],
+  "labels": [{ "name": "Deutsche Grammophon", "catno": "439 009-2" }],
+  "identifiers": [{ "type": "Barcode", "value": "0 28943 90092 8" }],
+  "extraartists": [
+    { "name": "Herbert von Karajan", "role": "Conductor" },
+    { "name": "Wiener Philharmoniker", "role": "Orchestra" }
+  ],
+  "tracklist": [
+    {
+      "type_": "index",
+      "position": "",
+      "title": "Symphonie Nr. 9 E-Moll Op. 95 »Aus Der Neuen Welt«",
+      "duration": "",
+      "extraartists": [{ "name": "Antonín Dvořák", "role": "Composed By" }],
+      "sub_tracks": [
+        { "type_": "track", "position": "1", "title": "1. Adagio – Allegro Molto", "duration": "9:58" },
+        { "type_": "track", "position": "2", "title": "2. Largo", "duration": "12:27" },
+        { "type_": "track", "position": "3", "title": "3. Molto Vivace", "duration": "8:36" },
+        { "type_": "track", "position": "4", "title": "4. Allegro Con Fuoco", "duration": "11:25" }
+      ]
+    },
+    {
+      "type_": "index",
+      "position": "",
+      "title": "Die Moldau Aus Dem Zyklus Symphonischer Dichtungen »Mein Vaterland«",
+      "duration": "12:40",
+      "extraartists": [{ "name": "Bedřich Smetana", "role": "Composed By" }],
+      "sub_tracks": [
+        { "type_": "track", "position": "5.1", "title": "Allegro. Die Erste Quelle Der Moldau", "duration": "" },
+        { "type_": "track", "position": "5.2", "title": "Die Zweite Quelle", "duration": "" },
+        { "type_": "track", "position": "5.3", "title": "Wald; Jagd", "duration": "" },
+        { "type_": "track", "position": "5.4", "title": "L'Istesso Tempo Ma Moderato. Bauernhochzeit", "duration": "" },
+        { "type_": "track", "position": "5.5", "title": "L'Istesso Tempo. Mondschein; Nymphenreigen", "duration": "" },
+        { "type_": "track", "position": "5.6", "title": "Tempo I. St.-Johann-Stromschnellen", "duration": "" },
+        { "type_": "track", "position": "5.7", "title": "Più Moto. Die Moldau Strömt Breit Dahin", "duration": "" },
+        { "type_": "track", "position": "5.8", "title": "Vyšehrad", "duration": "" }
+      ]
+    }
+  ]
+}

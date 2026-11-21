@@ -145,7 +145,7 @@ async function main(){
    await page.evaluate(()=>mediaQA.startEdit({id:'old',title:'Conditions',hub:'Ring',condition:'nm'}));await page.locator('#more-details').evaluate(n=>n.open=true);
    for(const lang of ['en','ja','zh']){
     await page.evaluate(l=>mediaQA.setLang(l,false),lang);assert((await page.locator('label[for=condition]').textContent()).trim());
-    assert.deepEqual(await page.locator('#condition-options option').evaluateAll(ns=>ns.map(n=>n.value)),['M','NM','VG+','VG','G+','G','F','P']);
+    assert.deepEqual(await page.locator('#condition-options [role=option]').allTextContents(),['M','NM','VG+','VG','G+','G','F','P']);
     await page.setViewportSize({width:760,height:900});const a=await page.locator('#hub').boundingBox(),b=await page.locator('#condition').boundingBox();assert(Math.abs(a.y-b.y)<2);assert(b.x>a.x);
     await page.setViewportSize({width:480,height:900});const c=await page.locator('#hub').boundingBox(),d=await page.locator('#condition').boundingBox();assert(d.y>c.y);assert(Math.abs(c.x-d.x)<2);
     await page.locator('#medium').selectOption('sacd');assert(await page.locator('#hub').isHidden());await page.locator('#medium').selectOption('cd');assert.equal(await page.locator('#hub').inputValue(),'Ring');

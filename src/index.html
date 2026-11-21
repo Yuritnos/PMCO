@@ -710,7 +710,7 @@ details.more[open] > summary { margin-bottom: 14px; }
 .custom-select-menu { position: fixed; z-index: 80; max-height: min(240px, 45vh); overflow-y: auto; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 10px 28px rgba(0,0,0,.28); }
 .custom-select-menu[hidden] { display: none; }
 .custom-select-option { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 2px; background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
-.custom-select-option:hover, .custom-select-option:focus-visible { background: var(--accent-soft); outline: none; }
+.custom-select-option:hover, .custom-select-option:focus-visible, .preset-menu [aria-selected="true"] { background: var(--accent-soft); outline: none; }
 .custom-select-option[aria-selected="true"] { color: var(--accent); }
 /* Card width comes from the Card size slider in Settings; small cards get tighter type. */
 /* Cards are exactly --card-w wide (never wider than the shelf), so the slider resizes them smoothly
@@ -1606,14 +1606,14 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           </div>
           <div class="two" id="hub-condition">
           <div class="field">
-            <label class="lbl" for="hub" data-i18n="hub">Inner ring manufacturing</label>
-            <input class="input" id="hub" type="text" list="hub-options" data-i18n-ph="hubPh" placeholder="e.g. Full silver hub" autocomplete="off">
-            <datalist id="hub-options"></datalist>
+            <label class="lbl" id="hub-label" for="hub" data-i18n="hub">Inner ring manufacturing</label>
+            <input class="input" id="hub" type="text" role="combobox" aria-autocomplete="none" aria-controls="hub-options" aria-expanded="false" data-i18n-ph="hubPh" placeholder="e.g. Full silver hub" autocomplete="off">
+            <div class="custom-select-menu preset-menu" id="hub-options" role="listbox" aria-labelledby="hub-label" hidden></div>
           </div>
           <div class="field">
-            <label class="lbl" for="condition" data-i18n="mediaCondition">Media condition</label>
-            <input class="input" id="condition" type="text" list="condition-options" placeholder="M / NM / VG+ / VG / G+ / G / F / P" autocomplete="off">
-            <datalist id="condition-options"><option value="M"><option value="NM"><option value="VG+"><option value="VG"><option value="G+"><option value="G"><option value="F"><option value="P"></datalist>
+            <label class="lbl" id="condition-label" for="condition" data-i18n="mediaCondition">Media condition</label>
+            <input class="input" id="condition" type="text" role="combobox" aria-autocomplete="none" aria-controls="condition-options" aria-expanded="false" placeholder="M / NM / VG+ / VG / G+ / G / F / P" autocomplete="off">
+            <div class="custom-select-menu preset-menu" id="condition-options" role="listbox" aria-labelledby="condition-label" hidden></div>
           </div>
           </div>
           <div id="medium-details" class="two"></div>
@@ -2800,9 +2800,9 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     return Object.keys(known).filter(function (k) { return known[k].some(function (s) { return s.toLowerCase() === value.toLowerCase(); }); })[0] || value;
   }
   function refreshTypeSuggestions() {
-    var types = $("work-type-options"), hubs = $("hub-options");
+    var types = $("work-type-options");
     if (types) { types.textContent = ""; WORK_TYPES.forEach(function (v) { var o = el("option"); o.value = workTypeText(v); types.appendChild(o); }); }
-    if (hubs) { hubs.textContent = ""; ["full", "partial", "clear", "other"].forEach(function (v) { var o = el("option"); o.value = hubText(v); hubs.appendChild(o); }); }
+    setPresetOptions("hub", ["full", "partial", "clear", "other"].map(hubText));
   }
   function inferWorkType(title) {
     var s = String(title || "");
@@ -3374,6 +3374,85 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
     wrap.appendChild(menu);
     syncAnimatedSelect(id);
   }
+  function setPresetOptions(id, values) {
+    var menu = $(id + "-options");
+    menu.textContent = "";
+    values.forEach(function (value, i) {
+      var option = el("div", "custom-select-option", value);
+      option.id = menu.id + "-" + i;
+      option.setAttribute("role", "option");
+      menu.appendChild(option);
+    });
+  }
+  function initPresetInput(id) {
+    var input = $(id), menu = $(id + "-options"), active = -1;
+    function highlight(index) {
+      var previous = menu.children[active], option = menu.children[index];
+      if (previous) previous.removeAttribute("aria-selected");
+      active = index;
+      if (option) {
+        option.setAttribute("aria-selected", "true");
+        input.setAttribute("aria-activedescendant", option.id);
+        option.scrollIntoView({ block: "nearest" });
+      } else input.removeAttribute("aria-activedescendant");
+    }
+    function close() {
+      menu.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      highlight(-1);
+    }
+    function position() {
+      if (menu.hidden) return;
+      var rect = input.getBoundingClientRect(), panel = input.closest(".panel").getBoundingClientRect();
+      if (!rect.width || rect.bottom <= panel.top || rect.top >= panel.bottom) { close(); return; }
+      var bottom = window.innerHeight, above = rect.top - 12, below = bottom - rect.bottom - 12;
+      var wanted = Math.min(320, menu.scrollHeight + 2), upward = below < wanted && above > below;
+      menu.style.maxHeight = Math.max(0, Math.min(wanted, upward ? above : below)) + "px";
+      menu.style.width = rect.width + "px";
+      menu.style.left = rect.left + "px";
+      menu.style.top = (upward ? rect.top - menu.offsetHeight - 4 : rect.bottom + 4) + "px";
+    }
+    function open() {
+      if (!menu.hidden) return;
+      menu.hidden = false;
+      menu.scrollTop = 0;
+      input.setAttribute("aria-expanded", "true");
+      position();
+    }
+    function choose(option) {
+      input.value = option.textContent;
+      close();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    input.addEventListener("click", open);
+    input.addEventListener("blur", close);
+    input.addEventListener("input", function () { highlight(-1); });
+    input.addEventListener("keydown", function (e) {
+      if (e.isComposing) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        open();
+        var last = menu.children.length - 1;
+        highlight(e.key === "ArrowDown" ? Math.min(last, active + 1) : active < 0 ? last : Math.max(0, active - 1));
+      } else if (!menu.hidden && e.key === "Enter" && active >= 0) {
+        e.preventDefault();
+        choose(menu.children[active]);
+      } else if (!menu.hidden && e.key === "Escape") {
+        e.preventDefault(); e.stopPropagation(); close();
+      }
+    });
+    menu.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    menu.addEventListener("click", function (e) {
+      var option = e.target.closest('[role="option"]');
+      if (option) choose(option);
+    });
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", function (e) { if (e.target !== menu) position(); }, true);
+  }
+  setPresetOptions("condition", ["M", "NM", "VG+", "VG", "G+", "G", "F", "P"]);
+  initPresetInput("hub");
+  initPresetInput("condition");
   document.addEventListener("pointerdown", function (e) {
     Object.keys(animatedSelects).forEach(function (id) {
       var entry = animatedSelects[id];
@@ -8792,10 +8871,12 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         var w = work(t.title, t.extraartists, t.artists);
         var children = t.sub_tracks || [];
         children.forEach(function (child) { track(Object.assign({}, child, { position: child.position || t.position }), w); });
-        /* Discogs uses 5a–5j (or 1-5a–1-5j) for sections within one physical CD
-           track. Keep their credits, but use one audio slot and the parent timing.
-           Distinct numbered tracks, even variations, remain separate movements. */
-        var positions = children.map(function (child) { return /^(\d+(?:[-.]\d+)?)[a-z]+$/i.exec(String(child.position || "").trim()); });
+        /* Discogs uses 5a, 5.1 or 2-5.1 for sections within one physical track.
+           Keep their credits and use one audio slot when all share a track number. */
+        var positions = children.map(function (child) {
+          var position = String(child.position || "").trim();
+          return /^((?:[a-z]*\d+-)?\d+)\.\d+$/i.exec(position) || /^(\d+(?:[-.]\d+)?)[a-z]+$/i.exec(position);
+        });
         if (positions.length && positions.every(function (p) { return p && p[1] === positions[0][1]; })) {
           var duration = DURATION.test(t.duration || "") ? t.duration : "";
           if (!duration && w.tracks.every(function (tr) { return DURATION.test(tr.duration); })) {
@@ -8900,11 +8981,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         var sided = media.map(function (m, i) { return {medium:m.medium, number:i+1}; }).filter(function (m) { return m.medium === "vinyl" || m.medium === "cassette"; });
         var item = sided[Math.floor((side[1].toUpperCase().charCodeAt(0)-65)/2)]; if (item) return item.number;
       }
-      var m = position.match(/^(?:CD\s*)?(\d+)\s*[-.]/i);
-      if (m) return +m[1];
-      // In LP + CD releases, plain 1/2/... (and CD1/CD2/...) are CD track numbers,
-      // not a continuation of the last LP side or physical item indexes.
-      if (/^\d+$/.test(position) && media && media.some(function (m) { return m.medium === "vinyl" || m.medium === "cassette"; })) {
+      // An unprefixed dot marks a track section (5.1); a dash can identify a disc (2-5.1).
+      var m = position.match(/^(?:(\d+)\s*-|CD\s*(\d+)\s*[-.])/i);
+      if (m) return +(m[1] || m[2]);
+      // In LP + CD releases, plain track and section numbers belong to the CD.
+      if (/^\d+(?:\.\d+)?$/.test(position) && media && media.some(function (m) { return m.medium === "vinyl" || m.medium === "cassette"; })) {
         var unsided = media.map(function (m, i) { return {medium:m.medium, number:i+1}; }).filter(function (m) { return m.medium !== "vinyl" && m.medium !== "cassette"; });
         if (unsided.length === 1) return unsided[0].number;
       }

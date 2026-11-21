@@ -118,7 +118,7 @@ async function main() {
         assert.equal(await page.locator('.w-performers legend').textContent(), performers);
         assert.equal(await page.locator('label[for=spars]').textContent(), spars);
         assert.equal(await page.locator('label[for=hub]').textContent(), hub);
-        assert.equal((await page.locator('#hub-options option').evaluateAll(ns => ns.map(n => n.value))).at(-1), other);
+        assert.equal((await page.locator('#hub-options [role=option]').allTextContents()).at(-1), other);
         for (const id of ['albumOverall', 'works-set']) {
           assert.match(await page.locator('#' + id + ' > summary .section-hint').textContent(), /^ \(.+\)$/);
           assert.equal(await page.locator('#' + id + ' > summary').evaluate(n => getComputedStyle(n).whiteSpace), 'normal');
@@ -188,12 +188,12 @@ async function main() {
         assert.deepEqual(placeholders, [composer, type, hub], lang + ': exact examples');
         for (const placeholder of placeholders) assert(!/optional|任意|可选|选填|if known/i.test(placeholder), lang + ': optional wording');
         await page.locator('#more-details > summary').click();
-        for (const [id, listId, suggestion] of [['type', 'work-type-options', typeSuggestion], ['hub', 'hub-options', hubSuggestion]]) {
-          assert.deepEqual(await page.locator('#' + id).evaluate(n => [n.tagName, n.type, n.getAttribute('list'), n.readOnly, n.disabled]),
-            ['INPUT', 'text', listId, false, false], lang + ': ' + id + ' must remain editable free text');
-          assert((await page.locator('#' + listId + ' option').evaluateAll(ns => ns.map(n => n.value))).includes(suggestion),
-            lang + ': ' + id + ' must retain its translated suggestion');
+        for (const id of ['type', 'hub']) {
+          assert.deepEqual(await page.locator('#' + id).evaluate(n => [n.tagName, n.type, n.readOnly, n.disabled]),
+            ['INPUT', 'text', false, false], lang + ': ' + id + ' must remain editable free text');
         }
+        assert((await page.locator('#work-type-options option').evaluateAll(ns => ns.map(n => n.value))).includes(typeSuggestion));
+        assert((await page.locator('#hub-options [role=option]').allTextContents()).includes(hubSuggestion));
         const customType = 'Hybrid work / 創作 / 混合 ' + lang, customHub = 'Mirror ring / 手工 ' + lang;
         await page.locator('#title').fill('Typography QA ' + lang);
         await page.locator('#type').fill(customType); await page.locator('#hub').fill(customHub);

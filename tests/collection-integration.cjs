@@ -303,7 +303,7 @@ async function main() {
       await page.locator('.w-details > summary').click(); await page.locator('.w-type').fill(workType);
       await page.locator('#more-details').evaluate(n => n.open = true);
       assert.equal(await page.locator('#hub').evaluate(n => n.tagName), 'INPUT');
-      assert.equal(await page.locator('#hub').getAttribute('list'), 'hub-options');
+      assert.equal(await page.locator('#hub').getAttribute('aria-controls'), 'hub-options');
       await page.locator('#hub').fill(hub); await save(page);
       const cd = state.doc.cds.find(c => c.title === 'Custom type QA');
       assert.equal(cd.type, overall); assert.equal(cd.hub, hub); assert.equal(cd.works[0].type, workType);
@@ -343,7 +343,7 @@ async function main() {
       assert.equal(await page.locator('.w-type').inputValue(), workType);
     } finally { await f.close(); }
   });
-  await test('localized type/hub datalist suggestions normalize known values without an Unknown choice', async () => {
+  await test('localized type and hub presets normalize known values without an Unknown choice', async () => {
     const f = await fixture(), {page, state} = f;
     try {
       for (const [lang, type, hub, value, hubs] of [
@@ -352,7 +352,7 @@ async function main() {
         ['zh', '钢琴协奏曲', '胶圈', 'clear', ['满银圈', '半银圈', '胶圈', '其他']]
       ]) {
         await setLanguage(page, lang); await openAdd(page);
-        assert.deepEqual(await page.locator('#hub-options option').evaluateAll(ns => ns.map(n => n.value)), hubs);
+        assert.deepEqual(await page.locator('#hub-options [role=option]').allTextContents(), hubs);
         assert((await page.locator('#work-type-options option').evaluateAll(ns => ns.map(n => n.value))).includes(type));
         await page.locator('#title').fill('Known ' + lang); await page.locator('#type').fill(type);
         await page.locator('.w-title').fill('Concerto');

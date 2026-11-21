@@ -245,7 +245,7 @@ async function main() {
     try {
       await openAdd(page);
       await page.evaluate(() => window.workFormQA.setLang('zh', false));
-      assert.deepEqual(await page.locator('#hub-options option').evaluateAll(ns => ns.map(n => n.value)), ['满银圈', '半银圈', '胶圈', '其他']);
+      assert.deepEqual(await page.locator('#hub-options [role=option]').allTextContents(), ['满银圈', '半银圈', '胶圈', '其他']);
       await page.locator('#title').fill('Hub alias QA');
       await page.locator('#more-details > summary').click(); await page.locator('#hub').fill('透明圈'); await save(page);
       assert.equal(state.doc.cds[0].hub, 'clear');

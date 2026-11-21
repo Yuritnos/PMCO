@@ -71,8 +71,8 @@ async function main() {
     assert.equal(discTracks(out).length, 5);
     assert.equal(discTracks(out)[4].duration, '20:26');
   });
-  await test('numbered variation tracks stay separate; only shared lettered positions collapse', async () => {
-    for (const positions of [['5', '6'], ['5a', '6a'], ['', '']]) {
+  await test('variation tracks stay separate unless their sections share a physical track number', async () => {
+    for (const positions of [['5', '6'], ['5a', '6a'], ['5.1', '6.1'], ['', '']]) {
       const out = await lookup({tracklist: [{type_: 'index', title: 'Theme and Variations', duration: '6:42',
         sub_tracks: positions.map((p,i) => track('Variation ' + (i+1), p))}]});
       assert.equal(out.works[0].tracks.length, 2);
@@ -84,6 +84,22 @@ async function main() {
     assert.equal(out.works[0].duration, '6:42'); assert.equal(out.works[0].tracks.length, 0);
     assert(out.performers.some(p => p.name === 'Local'));
     for (const title of ['Theme and Variations', 'Variationen über ein Thema', '主題と変奏曲', '主题与变奏曲']) assert.equal(context.inferWorkType(title), 'ThemeVariations');
+  });
+  await test('dotted track sections follow their disc prefix or the CD in a mixed release', async () => {
+    const suite = position => ({type_: 'index', title: 'Suite',
+      sub_tracks: [track('Prelude', position + '.1'), track('Fugue', position + '.2')]});
+    const set = await lookup({formats: [{name: 'CD', qty: '2'}], tracklist: [
+      track('Overture', '1-1'), suite('2-5'), track('Encore', 'CD2.6')
+    ]});
+    assert.deepEqual(set.lookupDiscs.map(disc => disc.works.map(work => work.title)), [['Overture'], ['Suite', 'Encore']]);
+    assert.equal(set.lookupDiscs[1].works[0].tracks.length, 0);
+    assert.equal(set.lookupDiscs[1].works[0].duration, '6:42');
+
+    const mixed = await lookup({formats: [{name: 'Vinyl', qty: '1'}, {name: 'CD', qty: '1'}], tracklist: [
+      track('Overture', 'A1'), suite('4'), suite('CD1-5')
+    ]});
+    assert.deepEqual(mixed.lookupDiscs.map(disc => disc.works.map(work => work.title)), [['Overture'], ['Suite', 'Suite']]);
+    assert(mixed.lookupDiscs[1].works.every(work => work.tracks.length === 0 && work.duration === '6:42'));
   });
   await test('431780-2 independent Liszt pieces remain four separate works', async () => {
     const titles = ['Nuages Gris', 'La Notte', 'La lugubre gondolaII', 'Funérailles'];
