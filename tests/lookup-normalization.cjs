@@ -210,6 +210,18 @@ async function main() {
     assert.equal(out.works[0].performersMode, 'additional');
     assert.equal(out.works[4].title, 'Suite');
   });
+  await test('counted headings split distinct opus numbers, preserving same-opus movements and scoped credits', async () => {
+    const out = await lookup({tracklist: [
+      {type_: 'heading', title: '2 Nocturnes', extraartists: [credit('Soloist', 'Piano')]},
+      track('1. Nocturne Op. 9', '1'), track('2. Nocturne Op. 15', '2'),
+      {type_: 'heading', title: '2 Movements'},
+      track('Adagio Op. 50', '3'), track('Allegro Op. 50', '4')
+    ]});
+    assert.deepEqual(out.works.map(work => work.title), ['Nocturne Op. 9', 'Nocturne Op. 15', '2 Movements']);
+    assert.deepEqual(out.works.map(work => work.tracks.length), [0, 0, 2]);
+    assert.deepEqual(out.works.map(work => plain(metadata.workMetadata(out, work).performers)),
+      [[pianist('Soloist')], [pianist('Soloist')], []]);
+  });
   await test('global normalization includes all discs; first disc never dictates later discs', async () => {
     const out = await lookup({formats: [{name: 'CD', qty: '2'}], extraartists: [composer('A'), credit('Common', 'Orchestra')], tracklist: [
       track('Sonata', '1-1', [credit('One', 'Piano')]), track('Symphony', '2-1', [composer('B'), credit('Two', 'Piano')])

@@ -1,0 +1,20 @@
+{
+  "id": 23182208,
+  "title": "4 Balladen · Barcarolle · Fantasie",
+  "formats": [{ "name": "CD", "qty": "1" }],
+  "labels": [{ "name": "Deutsche Grammophon", "catno": "423 090-2" }],
+  "extraartists": [
+    { "name": "Frédéric Chopin", "role": "Composed By" },
+    { "name": "Krystian Zimerman", "role": "Piano" }
+  ],
+  "tracklist": [
+    { "type_": "heading", "position": "", "title": "4 Balladen = Ballades = Ballate", "duration": "" },
+    { "type_": "track", "position": "1", "title": "No. 1 G-moll Op. 23 = In G Minor = En Sol Mineur = In Sol Minore", "duration": "9:33" },
+    { "type_": "track", "position": "2", "title": "No. 2 F-dur Op. 38 = In F Major = En Fa Majeur = In Fa Maggiore", "duration": "7:43" },
+    { "type_": "track", "position": "3", "title": "No. 3 As-dur Op. 47 = In A Flat Major = En La Bémol Majeur = In La Bemolle Maggiore", "duration": "7:26" },
+    { "type_": "track", "position": "4", "title": "No. 4 F-moll Op. 52 = In F Minor = En Fa Mineur = In Fa Minore", "duration": "11:54" },
+    { "type_": "heading", "position": "", "title": "-", "duration": "" },
+    { "type_": "track", "position": "5", "title": "Barcarolle Fis-dur Op. 60 = In F Sharp Major = En Fa Dièse Majeure = In Fa Diesis Maggiore", "duration": "8:54" },
+    { "type_": "track", "position": "6", "title": "Fantasie F-moll Op. 49 = In F Minor = En Fa Mineur = In Fa Minore", "duration": "13:59" }
+  ]
+}

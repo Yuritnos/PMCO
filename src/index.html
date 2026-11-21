@@ -8842,6 +8842,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
   /* Plain independent tracks are works of their own. Explicit headings/indexes and movement
      numbering or a shared Work: Movement prefix supply evidence for grouping. */
   function dgWorks(tracklist, composers, context) {
+    tracklist = tracklist || [];
     context = context || { credits: [], artists: [], names: {}, positions: [] };
     var works = [], cur = null, grouping = "";
     var formatCredits = [], formatArtists = [];
@@ -8850,8 +8851,11 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
       cur.sourceCredits = credits || []; cur.sourceArtists = artists || [];
       works.push(cur); return cur;
     }
+    function trackTitle(t) {
+      return String(t.title || "").replace(/^\d+\.\s+/, "");
+    }
     function track(t, into) {
-      into.tracks.push({ title: dgTitle(String(t.title || "").replace(/^\d+\.\s+/, "")), duration: DURATION.test(t.duration || "") ? t.duration : "" });
+      into.tracks.push({ title: dgTitle(trackTitle(t)), duration: DURATION.test(t.duration || "") ? t.duration : "" });
       if (/^[A-Z]\d*$/i.test(String(t.position || ""))) into.tracks[into.tracks.length-1].position = t.position;
       var release = context.credits.filter(function (a) { return dgCreditApplies(a.tracks, t.position, context.positions); });
       var own = (t.extraartists || []).concat(into.sourceCredits, formatCredits);
@@ -8866,7 +8870,22 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         if (!into.performers.some(function (x) { return x.name === p.name && x.role === p.role; })) into.performers.push(p);
       });
     }
-    (tracklist || []).forEach(function (t) {
+    // A counted group such as "4 Balladen" can list complete pieces under one heading.
+    function numberedPieces(heading, at) {
+      var count = /^(\d+)\s+\p{L}/u.exec(heading);
+      if (!count || +count[1] < 2) return [];
+      var pieces = [], opusNumbers = new Set();
+      for (var i = at + 1; i < tracklist.length; i++) {
+        var item = tracklist[i];
+        if (item.type_ && item.type_ !== "track") break;
+        var opus = /\bop(?:us)?\.?\s*(\d+)/i.exec(item.title || "");
+        if (!opus || opusNumbers.has(opus[1])) return [];
+        opusNumbers.add(opus[1]); pieces.push(item);
+      }
+      return pieces.length === +count[1] ? pieces : [];
+    }
+    for (var at = 0; at < tracklist.length; at++) {
+      var t = tracklist[at];
       if (t.type_ === "index") {
         var w = work(t.title, t.extraartists, t.artists);
         var children = t.sub_tracks || [];
@@ -8888,8 +8907,21 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
         }
         cur = null; grouping = "";
       } else if (t.type_ === "heading") {
-        if (/^(?:(?:vinyl|lp|cd|sacd|dvd|bd|blu[- ]?ray|cassette)(?:\s*\d+)?|(?:disc|disk)\s*\d+)$/i.test(String(t.title || "").trim())) {
+        var heading = dgTitle(t.title);
+        var pieces = numberedPieces(heading, at);
+        if (/^(?:(?:vinyl|lp|cd|sacd|dvd|bd|blu[- ]?ray|cassette)(?:\s*\d+)?|(?:disc|disk)\s*\d+)$/i.test(heading)) {
           formatCredits = t.extraartists || []; formatArtists = t.artists || [];
+          cur = null; grouping = "";
+        } else if (!heading && !(t.extraartists || []).length && !(t.artists || []).length) {
+          cur = null; grouping = "";
+        } else if (pieces.length) {
+          var ballades = /^\d+\s+(?:balladen|ballades|ballate)(?:\s|$)/i.test(heading);
+          pieces.forEach(function (piece) {
+            var title = trackTitle(piece);
+            if (ballades && /^No\.?\s*\d/i.test(title)) title = "Ballade " + title;
+            track(Object.assign({}, piece, { title: title }), work(title, t.extraartists, t.artists));
+          });
+          at += pieces.length;
           cur = null; grouping = "";
         } else {
           work(t.title, t.extraartists, t.artists); grouping = "heading";
@@ -8911,7 +8943,7 @@ body.with-player .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px))
           if (!movement) cur = null;
         }
       }
-    });
+    }
     return works.filter(function (w) { delete w.split; delete w.sourceCredits; delete w.sourceArtists; return w.title || w.tracks.length; });
   }
   /* Promote metadata only when every actual work supplies it, across all source discs. */

@@ -378,6 +378,36 @@ async function main() {
       assert.deepEqual(slots.map(slot => slot.duration), ['9:58', '12:27', '8:36', '11:25', '12:40']);
     } finally { await close(); }
   });
+  await test('catalogue 423 090-2 saves six independent Chopin works with their durations', async () => {
+    const {page, state, close} = await fixture();
+    const release = require('./fixtures/discogs-23182208.json');
+    const catno = release.labels[0].catno;
+    const durations = ['9:33', '7:43', '7:26', '11:54', '8:54', '13:59'];
+    try {
+      await page.route('https://api.discogs.com/database/search?**', route => route.fulfill({json: {results: [
+        {id: release.id, title: release.title, catno, format: ['CD']}
+      ]}}));
+      await page.route('https://api.discogs.com/releases/' + release.id, route => route.fulfill({json: release}));
+      await page.locator('#open-add').click();
+      await page.locator('#lookup-q').fill(catno);
+      await page.locator('#lookup-go').click();
+      await page.locator('#lookup-use-0').click();
+      await page.waitForFunction(() => document.getElementById('title').value.includes('Barcarolle'));
+      assert.equal(await page.locator('#work-list .work').count(), 6);
+      assert.equal(await page.locator('#work-list .trow').count(), 0);
+      await save(page);
+
+      const album = state.doc.cds.find(cd => cd.catalogNo === catno);
+      assert.equal(album.composer, 'Frédéric Chopin');
+      assert.deepEqual(album.performers, [{name: 'Krystian Zimerman', role: 'Pianist'}]);
+      assert.deepEqual(album.works.map(work => work.title.match(/^(?:Ballade No\. \d+|Barcarolle|Fantasie)\b/)?.[0]),
+        ['Ballade No. 1', 'Ballade No. 2', 'Ballade No. 3', 'Ballade No. 4', 'Barcarolle', 'Fantasie']);
+      assert.deepEqual(album.works.map(work => work.title.match(/\bOp\. (\d+)/i)?.[1]), ['23', '38', '47', '52', '60', '49']);
+      assert(album.works.every(work => work.tracks.length === 0));
+      const slots = await page.evaluate(item => mediaQA.discTracks(item), album);
+      assert.deepEqual(slots.map(slot => slot.duration), durations);
+    } finally { await close(); }
+  });
   await test('card titles stop after three lines and quantity badges appear only for multiple copies',async()=>{
     const title='Rachmaninov · Piano Concerto No. 2 / Prokofiev · Piano Concerto No. 5 (Klavierkonzerte · Concertos Pour Piano)';
     const single={id:'copies',title,quantity:3};
